@@ -1,20 +1,17 @@
 # AI-BIT
 
-Read-only ревизия фактического состояния внедрения Битрикс24.
+Read-only Bitrix24 implementation audit through the official REST API.
 
-## Текущие возможности
+## Current capabilities
 
-- проверка подключения к Bitrix24 через входящий webhook;
-- сбор пользователей и подразделений;
-- сбор CRM: воронки, стадии, сделки, контакты, компании и поля;
-- сбор задач, рабочих групп и проектов;
-- сбор доступных шаблонов бизнес-процессов и хранилищ Диска;
-- сохранение отдельных JSON-файлов в snapshot-каталог;
-- формирование `summary.json`;
-- формирование HTML-отчёта о фактическом состоянии внедрения;
-- отказоустойчивый аудит: недоступность отдельного REST-метода не останавливает весь сбор.
+- full snapshot of users, departments, CRM, tasks, groups and business-process templates;
+- REST capability explorer by module;
+- automatic findings with severity, impact and remediation;
+- HTML best-practice report;
+- raw JSON snapshots for further analysis;
+- no write operations against Bitrix24.
 
-## Обновление на сервере
+## Deploy/update
 
 ```bash
 cd /opt/ai-bit
@@ -22,51 +19,30 @@ git pull origin feat/mvp-bitrix-auditor
 docker compose up -d --build
 ```
 
-## Проверка
+## Run
 
 ```bash
 curl http://localhost:8080/health
-curl http://localhost:8080/api/v1/bitrix/status
-```
-
-## Запуск ревизии
-
-```bash
+curl -X POST http://localhost:8080/api/v1/explorer/run
 curl -X POST http://localhost:8080/api/v1/audits/run
 ```
 
-После завершения открой в браузере:
+Open the latest report:
 
 ```text
-http://IP_AI_СЕРВЕРА:8080/api/v1/reports/latest
+http://SERVER_IP:8080/api/v1/reports/latest
 ```
 
-JSON-сводка:
-
-```bash
-curl http://localhost:8080/api/v1/reports/latest/summary
-```
-
-На сервере результаты сохраняются в:
+JSON endpoints:
 
 ```text
-/opt/ai-bit/reports/audit-<timestamp>/
+GET /api/v1/explorer/latest
+GET /api/v1/reports/latest/summary
+GET /api/v1/reports/latest/findings
 ```
 
-Каждый запуск создаёт отдельный снимок. Последний HTML-отчёт также доступен как `reports/latest-report.html`.
+## Security
 
-## Интерпретация результата
+Use a temporary high-privilege incoming webhook only for discovery. Regenerate or delete it after the snapshot. Never commit `.env`, webhook URLs, credentials or tokens.
 
-HTML-отчёт показывает факты, которые удалось подтвердить через REST API:
-
-- что реально существует в портале;
-- какие модули фактически используются;
-- количественные показатели;
-- какие области требуют ручной проверки;
-- какие REST-методы недоступны с текущими правами webhook.
-
-Статус в этой версии предварительный. Он не заменяет сверку с техническим заданием, актом выполненных работ и утверждёнными бизнес-процессами.
-
-## Безопасность
-
-Используй отдельный входящий webhook с минимально необходимыми правами. Приложение выполняет только операции чтения. Никогда не добавляй `.env`, URL webhook или токены доступа в Git.
+The application invokes read-only REST methods only. Rules marked as `heuristic` are expert thresholds, not official Bitrix24 limits.
