@@ -1,38 +1,72 @@
 # AI-BIT
 
-Read-only audit platform for Bitrix24 and future enterprise infrastructure connectors.
+Read-only ревизия фактического состояния внедрения Битрикс24.
 
-## MVP capabilities
+## Текущие возможности
 
-- FastAPI health endpoint;
-- read-only Bitrix24 webhook connection check;
-- initial collection of profile, users, departments, CRM statuses and CRM fields;
-- JSON audit report generation;
-- Docker Compose deployment.
+- проверка подключения к Bitrix24 через входящий webhook;
+- сбор пользователей и подразделений;
+- сбор CRM: воронки, стадии, сделки, контакты, компании и поля;
+- сбор задач, рабочих групп и проектов;
+- сбор доступных шаблонов бизнес-процессов и хранилищ Диска;
+- сохранение отдельных JSON-файлов в snapshot-каталог;
+- формирование `summary.json`;
+- формирование HTML-отчёта о фактическом состоянии внедрения;
+- отказоустойчивый аудит: недоступность отдельного REST-метода не останавливает весь сбор.
 
-## Server deployment
+## Обновление на сервере
 
 ```bash
-git clone https://github.com/p1zzakov/ai-bit.git
-cd ai-bit
-git checkout feat/mvp-bitrix-auditor
-cp .env.example .env
-nano .env
-
+cd /opt/ai-bit
+git pull origin feat/mvp-bitrix-auditor
 docker compose up -d --build
-docker compose logs -f auditor
 ```
 
-Check the service:
+## Проверка
 
 ```bash
 curl http://localhost:8080/health
 curl http://localhost:8080/api/v1/bitrix/status
+```
+
+## Запуск ревизии
+
+```bash
 curl -X POST http://localhost:8080/api/v1/audits/run
 ```
 
-Reports are written to `./reports` on the host.
+После завершения открой в браузере:
 
-## Security
+```text
+http://IP_AI_СЕРВЕРА:8080/api/v1/reports/latest
+```
 
-Use a dedicated inbound Bitrix24 webhook with the minimum required permissions. The application currently performs only read operations. Never commit `.env`, webhook URLs or access tokens.
+JSON-сводка:
+
+```bash
+curl http://localhost:8080/api/v1/reports/latest/summary
+```
+
+На сервере результаты сохраняются в:
+
+```text
+/opt/ai-bit/reports/audit-<timestamp>/
+```
+
+Каждый запуск создаёт отдельный снимок. Последний HTML-отчёт также доступен как `reports/latest-report.html`.
+
+## Интерпретация результата
+
+HTML-отчёт показывает факты, которые удалось подтвердить через REST API:
+
+- что реально существует в портале;
+- какие модули фактически используются;
+- количественные показатели;
+- какие области требуют ручной проверки;
+- какие REST-методы недоступны с текущими правами webhook.
+
+Статус в этой версии предварительный. Он не заменяет сверку с техническим заданием, актом выполненных работ и утверждёнными бизнес-процессами.
+
+## Безопасность
+
+Используй отдельный входящий webhook с минимально необходимыми правами. Приложение выполняет только операции чтения. Никогда не добавляй `.env`, URL webhook или токены доступа в Git.
