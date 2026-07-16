@@ -39,6 +39,24 @@ DEFAULT_SKIP_FRAGMENTS = (
     "bxajaxid=",
 )
 
+# Bitrix24 is heavily SPA-driven: many menu items are not exposed as ordinary
+# href links on the landing page. Seed the crawler with known read-only entry
+# points so a crawl from "/" does not incorrectly stop after one page.
+DEFAULT_SEED_PATHS = (
+    "/crm/",
+    "/company/personal/user/0/tasks/",
+    "/company/",
+    "/workgroups/",
+    "/docs/",
+    "/knowledge/",
+    "/calendar/",
+    "/bizproc/",
+    "/rpa/",
+    "/marketplace/",
+    "/contact_center/",
+    "/services/openlines/",
+)
+
 STATIC_EXTENSIONS = {
     ".css", ".js", ".map", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp",
     ".ico", ".woff", ".woff2", ".ttf", ".eot", ".pdf", ".doc", ".docx", ".xls",
@@ -98,11 +116,18 @@ def section_for_url(url: str) -> str:
         "knowledge": "knowledge",
         "calendar": "calendar",
         "services": "services",
-        "bizproc": "bizproc",
+        "bizproc": "page",
         "rpa": "rpa",
         "market": "market",
         "marketplace": "market",
+        "contact_center": "contact_center",
     }
+    # Tasks live below /company/personal/.../tasks/, so classify them before
+    # falling back to the first URL segment.
+    if "/tasks/" in f"/{path}/":
+        return "tasks"
+    if first == "services" and "/openlines/" in f"/{path}/":
+        return "openlines"
     return aliases.get(first, first or "other")
 
 
@@ -153,6 +178,17 @@ async def crawl_portal(
 
     queue: deque[tuple[str, int, str | None]] = deque([(start_url, 0, None)])
     scheduled = {start_url}
+
+    # Seed known sections at depth 1. They remain subject to max_pages and all
+    # normal read-only navigation/status checks.
+    if request.max_depth > 0:
+        for seed_path in DEFAULT_SEED_PATHS:
+            seed_url = normalize_url(seed_path, base_url, request.include_query)
+            if seed_url is None or seed_url in scheduled:
+                continue
+            scheduled.add(seed_url)
+            queue.append((seed_url, 1, start_url))
+
     visited: set[str] = set()
     nodes: list[dict[str, Any]] = []
     edges: list[dict[str, str]] = []
