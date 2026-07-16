@@ -2,29 +2,31 @@
 
 AI-BIT — read-only платформа для технического и функционального аудита коробочного Bitrix24.
 
-Проект объединяет два источника данных:
+Проект объединяет:
 
-1. **Bitrix24 REST API** — массовая выгрузка пользователей, подразделений, CRM, задач, групп, полей и доступных бизнес-процессов.
-2. **Browser Worker на Playwright** — просмотр интерфейсов и настроек, которые REST API не отдаёт или отдаёт неполно.
+- **REST Collector** — массовая выгрузка пользователей, структуры, CRM, задач, групп и доступных бизнес-процессов;
+- **Browser Worker** — авторизованный просмотр интерфейсов, настроек и разделов, которых нет в REST;
+- **Portal Crawler** — автоматическое обнаружение same-origin страниц и построение карты портала;
+- **Audit History & Diff** — хранение запусков и сравнение изменений;
+- **Web Dashboard** — визуализация карты портала, KPI, статусов и изменений.
 
-Цель проекта — определить фактическое состояние внедрения Bitrix24, обнаружить недоступные, неиспользуемые и частично настроенные модули, сохранить доказательства и подготовить данные для итогового отчёта руководству.
+Все операции против Bitrix24 выполняются в read-only режиме.
 
 ## Текущий статус
 
-MVP работает в read-only режиме.
-
 Реализовано:
 
-- авторизация в коробочном Bitrix24 через браузер;
-- сохранение браузерной сессии;
-- REST-снимок основных сущностей;
-- сканирование ключевых разделов портала;
-- конфигурируемые browser-пресеты;
-- HTTP-, JS- и сетевые диагностические данные;
-- сохранение HTML, screenshot и evidence JSON;
-- классификация страниц: `ok`, `redirected`, `partial`, `denied`, `not_found`, `error`;
-- scorecard покрытия портала;
-- автоматический same-origin crawler для построения карты Bitrix24;
+- браузерная авторизация и сохранение сессии;
+- REST snapshot основных сущностей;
+- сканирование известных разделов по пресетам;
+- HTTP-, JavaScript- и network-диагностика;
+- screenshot, HTML и evidence JSON;
+- статусы `ok`, `redirected`, `partial`, `denied`, `not_found`, `error`;
+- scorecard покрытия известных разделов;
+- same-origin crawler с глубиной и лимитом страниц;
+- история crawl-запусков;
+- diff добавленных, удалённых и изменённых страниц;
+- веб-панель на `/dashboard`;
 - отсутствие write-операций против Bitrix24.
 
 ## Архитектура
@@ -39,29 +41,33 @@ Bitrix24
    │
    └── Web UI
           └── Browser Worker :8090
-                 ├── presets scan
-                 ├── crawler
-                 ├── screenshots
-                 ├── HTML evidence
-                 └── network diagnostics
+                 ├── preset scanner
+                 ├── portal crawler
+                 ├── crawl history
+                 ├── audit diff
+                 ├── web dashboard
+                 └── evidence artifacts
 ```
 
-## Каталоги проекта
+## Структура проекта
 
 ```text
 /opt/ai-bit/
-├── app/                         # основной FastAPI backend
+├── app/                            # основной REST backend
 ├── browser-worker/
-│   ├── app.py                   # базовый browser worker
-│   ├── build_patch.py           # build-time расширения scanner 0.4
-│   ├── crawler.py               # автоматический crawler портала
-│   ├── crawler_patch.py         # подключение crawler API
-│   ├── login_debug.py           # диагностика авторизации
-│   ├── presets.json             # конфигурация известных разделов
+│   ├── app.py                      # базовый Browser Worker
+│   ├── build_patch.py              # scanner/readiness расширения
+│   ├── crawler.py                  # Portal Crawler
+│   ├── crawler_patch.py            # crawler API endpoints
+│   ├── history.py                  # история и diff
+│   ├── dashboard.py                # HTML dashboard
+│   ├── history_patch.py            # dashboard/history API endpoints
+│   ├── login_debug.py              # диагностика входа
+│   ├── presets.json                # известные разделы и readiness selectors
 │   └── Dockerfile
-├── reports/                     # REST-отчёты и browser evidence
+├── reports/                        # snapshots и browser artifacts
 ├── docker-compose.yml
-├── .env                         # секреты, не коммитить
+├── .env                            # секреты, не коммитить
 └── .env.example
 ```
 
@@ -73,14 +79,12 @@ Bitrix24
 - 4 vCPU;
 - 8 GB RAM;
 - 80–100 GB disk;
-- доступ по HTTPS к Bitrix24;
+- HTTPS-доступ к Bitrix24;
 - Docker Engine и Docker Compose v2.
 
 ## Конфигурация
 
-Создать `.env` на основе `.env.example`.
-
-Ключевые параметры:
+Создайте `.env` на основе `.env.example`.
 
 ```env
 BITRIX_WEBHOOK_URL=https://bitrix.example.kz/rest/USER_ID/SECRET/
@@ -93,7 +97,7 @@ BROWSER_TIMEOUT_MS=45000
 BROWSER_IGNORE_HTTPS_ERRORS=false
 ```
 
-Не добавляйте `.env`, webhook URL, пароль, токены и browser storage state в Git.
+Никогда не коммитьте `.env`, webhook URL, пароли, токены или browser storage state.
 
 ## Установка и обновление
 
@@ -104,7 +108,7 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-Проверка контейнеров:
+Проверка:
 
 ```bash
 docker compose ps
@@ -112,35 +116,26 @@ curl -sS http://127.0.0.1:8080/health | jq
 curl -sS http://127.0.0.1:8090/health | jq
 ```
 
-## REST-аудит
+## Web Dashboard
 
-Запуск capability explorer:
-
-```bash
-curl -sS -X POST http://127.0.0.1:8080/api/v1/explorer/run | jq
-```
-
-Запуск полного REST-аудита:
-
-```bash
-curl -sS -X POST http://127.0.0.1:8080/api/v1/audits/run | jq
-```
-
-Последний HTML-отчёт:
+После запуска Browser Worker откройте:
 
 ```text
-http://SERVER_IP:8080/api/v1/reports/latest
+http://SERVER_IP:8090/dashboard
 ```
 
-Основные JSON endpoints:
+Dashboard показывает:
 
-```text
-GET /api/v1/explorer/latest
-GET /api/v1/reports/latest/summary
-GET /api/v1/reports/latest/findings
-```
+- количество посещённых и обнаруженных страниц;
+- распределение по разделам;
+- карту портала;
+- список страниц и их статусы;
+- историю crawl-аудитов;
+- добавленные, удалённые и изменённые страницы относительно предыдущего запуска.
 
-## Browser Worker
+Первый crawl создаёт базовую точку. Diff появится после второго запуска.
+
+## Browser Worker API
 
 ### Авторизация
 
@@ -151,34 +146,10 @@ curl -sS -X POST \
   -d '{}' | jq
 ```
 
-Проверка сохранённой сессии:
-
-```bash
-curl -sS http://127.0.0.1:8090/health | jq
-```
-
-### Пресеты
-
-Пресеты находятся в `browser-worker/presets.json`.
+### Известные пресеты
 
 ```bash
 curl -sS http://127.0.0.1:8090/presets | jq
-```
-
-Пример preset:
-
-```json
-{
-  "crm": {
-    "path": "/crm/",
-    "wait_for": [
-      ".crm-kanban",
-      ".main-grid",
-      "#workarea-content"
-    ],
-    "critical": true
-  }
-}
 ```
 
 ### Сканирование одного раздела
@@ -198,19 +169,11 @@ curl -sS -X POST \
 jq '{status,summary,errors}' /tmp/scan-all.json
 ```
 
-## AI Crawler
+## Portal Crawler
 
-Crawler автоматически открывает портал, извлекает внутренние ссылки, нормализует URL, исключает logout/download/ajax/static ресурсы и строит карту same-origin страниц.
+Crawler открывает портал, извлекает внутренние ссылки, нормализует URL, исключает logout/download/ajax/static ресурсы и формирует карту same-origin страниц.
 
-Ограничения по умолчанию:
-
-- максимум 50 страниц;
-- глубина обхода 2;
-- query string не учитывается;
-- задержка между страницами 250 ms;
-- write-действия не выполняются.
-
-### Запуск crawler
+Пример запуска:
 
 ```bash
 curl -sS -X POST \
@@ -218,25 +181,20 @@ curl -sS -X POST \
   -H 'Content-Type: application/json' \
   -d '{
     "start_path": "/",
-    "max_pages": 50,
-    "max_depth": 2,
+    "max_pages": 100,
+    "max_depth": 3,
     "include_query": false,
     "save_html": false,
-    "delay_ms": 250
+    "delay_ms": 300
   }' \
   -o /tmp/crawl.json
 ```
 
-Краткий результат:
+Результат:
 
 ```bash
-jq '{summary,errors,artifact}' /tmp/crawl.json
-```
-
-Список обнаруженных разделов:
-
-```bash
-jq '.nodes[] | {section,title,status,url}' /tmp/crawl.json
+jq '{history_id,summary,errors,artifact}' /tmp/crawl.json
+jq '.nodes[] | {depth,section,title,status,url}' /tmp/crawl.json
 ```
 
 Последний crawl:
@@ -245,43 +203,91 @@ jq '.nodes[] | {section,title,status,url}' /tmp/crawl.json
 curl -sS http://127.0.0.1:8090/crawl/latest | jq
 ```
 
-Результат сохраняется в:
+## История и сравнение аудитов
+
+Список запусков:
+
+```bash
+curl -sS http://127.0.0.1:8090/crawl/history | jq
+```
+
+Получение конкретного запуска:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/crawl/history/crawl-YYYYMMDDTHHMMSSZ | jq
+```
+
+Сравнение двух запусков:
+
+```bash
+curl -sS \
+  'http://127.0.0.1:8090/crawl/diff?before=crawl-OLD&after=crawl-NEW' | jq
+```
+
+Diff включает:
+
+- новые URL;
+- удалённые URL;
+- изменения `title`, `status`, `section`, `http_status`;
+- изменение количества страниц по разделам.
+
+История сохраняется в:
 
 ```text
-/app/artifacts/<timestamp>/crawl/site-map.json
-/app/artifacts/latest-crawl.json
+/app/artifacts/history/crawl-*.json
+```
+
+При стандартном `docker-compose.yml` этот каталог должен находиться на persistent host volume.
+
+## REST-аудит
+
+Capability explorer:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8080/api/v1/explorer/run | jq
+```
+
+Полный REST-аудит:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8080/api/v1/audits/run | jq
+```
+
+HTML-отчёт:
+
+```text
+http://SERVER_IP:8080/api/v1/reports/latest
 ```
 
 ## Статусы страниц
 
 | Статус | Значение |
 |---|---|
-| `ok` | URL открыт, страница распознана |
-| `redirected` | Bitrix перенаправил на фактический раздел |
-| `partial` | страница открыта, но часть интерфейса или readiness selector не подтверждены |
+| `ok` | страница открыта и распознана |
+| `redirected` | Bitrix перенаправил на фактический URL |
+| `partial` | страница открыта, но readiness/контент подтверждены частично |
 | `denied` | HTTP 401/403 или отказ доступа |
 | `not_found` | HTTP 404 |
 | `error` | ошибка навигации или Playwright |
 
-`partial` не всегда означает неисправность Bitrix24. Причиной может быть другая версия DOM, ленивый frontend-компонент или необязательный JS-ресурс.
+`partial` не всегда означает неисправность Bitrix24. Причиной может быть отличающийся DOM, lazy loading или необязательный frontend-ресурс.
 
 ## Артефакты
 
 Browser Worker сохраняет:
 
 - screenshot;
-- HTML страницы;
+- HTML;
 - evidence JSON;
-- итоговый URL;
-- HTTP status;
-- console warnings/errors;
-- page errors;
-- failed requests;
-- HTTP 4xx/5xx;
-- readiness selector;
-- crawl site map.
+- crawl site map;
+- историю crawl;
+- HTTP status и итоговый URL;
+- console/page errors;
+- failed requests и HTTP 4xx/5xx;
+- readiness selector.
 
-На сервере host volume обычно доступен в:
+Host volume обычно доступен в:
 
 ```text
 /opt/ai-bit/reports/ui/
@@ -289,69 +295,46 @@ Browser Worker сохраняет:
 
 ## Безопасность
 
-- Система предназначена для read-only аудита.
 - Используйте отдельную техническую учётную запись.
 - Не используйте личную учётную запись администратора.
-- После первичного REST discovery перевыпустите временный webhook.
 - Ограничьте доступ к портам 8080 и 8090 корпоративной сетью или VPN.
 - Не публикуйте Browser Worker напрямую в интернет.
-- Не добавляйте write REST scopes без отдельного согласования.
-- Перед crawl убедитесь, что учётная запись не имеет обязательной смены пароля или 2FA challenge.
+- После REST discovery перевыпускайте временный webhook.
+- Не добавляйте write scopes без отдельного согласования.
+- Перед crawl убедитесь, что пароль не истёк и нет обязательного 2FA challenge.
 
 ## Известные ограничения
 
-- REST API не показывает все визуальные настройки, права и схемы автоматизации.
-- Browser Worker зависит от фактической версии интерфейса коробочного Bitrix24.
-- Некоторые страницы используют slider, iframe и ленивую загрузку.
-- Crawler пока не нажимает элементы меню, открываемые только через JavaScript без `href`.
+- REST API не показывает все визуальные настройки и схемы автоматизации.
+- Browser Worker зависит от версии интерфейса коробочного Bitrix24.
+- Crawler не нажимает JavaScript-only элементы без `href`.
 - Crawler не выполняет формы, POST-запросы и write-действия.
-- Карта портала — техническое обнаружение страниц, а не окончательная оценка качества внедрения.
+- Динамические пользовательские URL могут создавать шум; требуется дальнейшая дедупликация.
+- Карта портала — техническое обнаружение, а не окончательная оценка качества внедрения.
 
 ## Roadmap
 
-### Ближайший этап
+Ближайшие этапы:
 
-- классификация обнаруженных crawler URL по модулям;
-- дедупликация динамических Bitrix URL;
-- карта меню и вложенности портала;
-- отдельные discovery-профили для CRM, задач, HR, RPA и бизнес-процессов;
+- дедупликация динамических URL и технических страниц;
+- интерактивный граф связей вместо только древовидного списка;
+- фильтры по разделам, статусам и глубине;
 - объединение REST snapshot и browser evidence;
-- автоматический implementation score;
-- отчёт «что внедрено / что отсутствует / что требует доработки».
-
-### Следующий этап
-
-- аудит CRM-воронок, стадий и полей;
-- анализ роботов и триггеров;
+- implementation score по CRM, задачам, HR, процессам и интеграциям;
+- аудит CRM-воронок, стадий, полей, роботов и триггеров;
 - анализ бизнес-процессов и маршрутов согласования;
-- аудит ролей и прав;
-- аудит приложений и интеграций;
-- история запусков и сравнение изменений;
-- генерация управленческого HTML/PDF/Excel отчёта;
+- аудит ролей, приложений и интеграций;
+- управленческий HTML/PDF/Excel отчёт;
 - AI-консультант по данным портала.
 
-### Перспектива
+## Правило разработки
 
-Модульная платформа аудита корпоративной инфраструктуры:
+Все изменения выполняются через Git:
 
-```text
-Bitrix24
-AD / LDAP
-Kerio Connect
-VMware
-MikroTik
-Zabbix
-1C
-```
+1. изменение исходников в ветке;
+2. commit и push;
+3. `git pull` на сервере;
+4. пересборка контейнера;
+5. проверка health и функционального endpoint.
 
-## Принцип разработки
-
-Все изменения выполняются через Git. Контейнеры не патчатся вручную.
-
-Рабочий цикл:
-
-```text
-Git commit → git pull → docker build → docker compose up → проверка API
-```
-
-Это обеспечивает повторяемость, контроль изменений и возможность отката.
+Ручное редактирование файлов внутри работающего контейнера не используется.
