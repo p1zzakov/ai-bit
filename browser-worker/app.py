@@ -92,11 +92,46 @@ async def new_context() -> BrowserContext:
 
 
 async def is_authenticated(page: Page) -> bool:
-    url = page.url.lower()
-    if "/auth/" in url or "login" in url:
-        return False
-    count = await page.locator('input[name="USER_LOGIN"], input[name="USER_PASSWORD"], input[type="password"]').count()
-    return count == 0
+    """Detect an authenticated Bitrix24 session without relying on the URL.
+
+    Boxed Bitrix24 can keep the user on ``/auth/`` after a successful login and
+    render a confirmation page. The previous URL-based check therefore produced
+    false negatives even when the account was already authenticated.
+    """
+    logout = page.locator(
+        'a[href*="logout"], '
+        'a:has-text("Выйти"), '
+        'button:has-text("Выйти"), '
+        'a:has-text("Log out"), '
+        'button:has-text("Log out")'
+    )
+    if await logout.count() > 0:
+        return True
+
+    body_text = (await page.locator("body").inner_text()).lower()
+    success_markers = (
+        "успешно авторизовались",
+        "вы зарегистрированы и успешно авторизовались",
+        "successfully authorized",
+        "successfully logged in",
+    )
+    if any(marker in body_text for marker in success_markers):
+        return True
+
+    login_input = page.locator(
+        'input[name="USER_LOGIN"], '
+        'input[name="login"], '
+        'input[type="email"]'
+    ).first
+    password_input = page.locator(
+        'input[name="USER_PASSWORD"], '
+        'input[name="password"], '
+        'input[type="password"]'
+    ).first
+
+    login_visible = await login_input.count() > 0 and await login_input.is_visible()
+    password_visible = await password_input.count() > 0 and await password_input.is_visible()
+    return not login_visible and not password_visible
 
 
 async def login(force: bool = False) -> dict[str, Any]:
