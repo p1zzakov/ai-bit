@@ -20,8 +20,8 @@ def main() -> None:
         "from ai_provider import ai_status, generate_advice\nfrom admin_dashboard import admin_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
         "rc imports",
     )
-    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.3"')
-    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.3"')
+    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.4"')
+    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.4"')
 
     root_marker = '''@app.get("/", response_class=HTMLResponse)
 async def executive_root() -> str:
@@ -127,7 +127,7 @@ async def system_health() -> dict[str, Any]:
     text = replace_once(text, context_marker, context_addition, "AI business architecture context")
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT System Health patch 1.0.0-rc.3")
+    print("Applied AI-BIT Enterprise UI Refresh patch 1.0.0-rc.4")
 
 
 if __name__ == "__main__":
