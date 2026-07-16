@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-
 APP_PATH = Path("/app/app.py")
 
 
@@ -19,15 +18,15 @@ def main() -> None:
     text = replace_once(
         text,
         "from fastapi import FastAPI, HTTPException",
-        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom dashboard import dashboard_html\nfrom history import CrawlHistory, diff_crawls",
+        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom dashboard import dashboard_html\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation",
         "history imports",
     )
 
     text = text.replace(
         'FastAPI(title="AI-BIT Browser Worker", version="0.5.0")',
-        'FastAPI(title="AI-BIT Browser Worker", version="0.6.0")',
+        'FastAPI(title="AI-BIT Browser Worker", version="0.7.0")',
     )
-    text = text.replace('"version": "0.5.0"', '"version": "0.6.0"')
+    text = text.replace('"version": "0.5.0"', '"version": "0.7.0"')
 
     settings_marker = "settings = Settings()\n"
     text = replace_once(
@@ -56,6 +55,7 @@ def main() -> None:
         login=login,
         navigate_page=navigate_page,
     )
+    result["assessment"] = analyze_implementation(result)
     history_path = CRAWL_HISTORY.save(result)
     result["history_id"] = history_path.stem
     result["history_path"] = str(history_path)
@@ -84,6 +84,24 @@ async def crawl_history_item(audit_id: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="Crawl audit not found") from None
 
 
+@app.get("/crawl/assessment/latest")
+async def latest_assessment() -> dict[str, Any]:
+    items = CRAWL_HISTORY.list(limit=1)
+    if not items:
+        raise HTTPException(status_code=404, detail="No crawl audit is available")
+    crawl = CRAWL_HISTORY.read(str(items[0]["id"]))
+    return crawl.get("assessment") or analyze_implementation(crawl)
+
+
+@app.get("/crawl/assessment/{audit_id}")
+async def crawl_assessment(audit_id: str) -> dict[str, Any]:
+    try:
+        crawl = CRAWL_HISTORY.read(audit_id)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Crawl audit not found") from None
+    return crawl.get("assessment") or analyze_implementation(crawl)
+
+
 @app.get("/crawl/diff")
 async def crawl_diff(before: str, after: str) -> dict[str, Any]:
     try:
@@ -100,7 +118,7 @@ async def crawl_diff(before: str, after: str) -> dict[str, Any]:
     text = text.replace(marker, endpoints + marker, 1)
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT history/dashboard patch 0.6.0")
+    print("Applied AI-BIT implementation dashboard patch 0.7.0")
 
 
 if __name__ == "__main__":
