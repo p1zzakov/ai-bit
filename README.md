@@ -1,41 +1,38 @@
 # AI-BIT
 
-AI-BIT — read-only платформа технического, функционального и операционного аудита коробочного Bitrix24.
+AI-BIT — read-only платформа технического, функционального, операционного и управленческого аудита коробочного Bitrix24.
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-alpha.2`.
+Browser Worker: `1.0.0-beta.1`.
+
+## Что добавлено в beta.1
+
+- единый Executive Dashboard;
+- главная страница `/` и отдельный маршрут `/executive`;
+- сводка зрелости внедрения, задач, просрочки, риска и 30-дневного тренда;
+- блок главных управленческих рисков;
+- блок приоритетных действий;
+- встроенный AI Coach на Groq прямо в браузере;
+- быстрые запросы: главные риски, план на 30 дней, кандидаты на автоматизацию;
+- произвольный вопрос к Groq без использования `curl`;
+- ответы AI формируются по текущему crawl, Operational Intelligence и трендам.
 
 ## Архитектура
 
-AI-BIT объединяет восемь контуров:
+AI-BIT объединяет:
 
-- **REST Collector** — пользователи, подразделения, задачи, CRM и другие сущности;
-- **Browser Worker** — UI-разделы и настройки, которых нет в REST;
-- **Portal Crawler** — карта внутренних страниц;
-- **Deep Audit** — рекомендации по модулям и страницам;
-- **Operational Intelligence** — нагрузка, просрочка и риски подразделений;
-- **Operational Trends** — динамика 7/30/90 дней;
-- **Unified Knowledge Graph** — связь пользователей, подразделений, модулей, страниц и рекомендаций;
-- **AI Provider Layer** — экспертные рекомендации через Groq с возможностью смены провайдера.
+- REST Collector;
+- Browser Worker;
+- Portal Crawler;
+- Deep Audit;
+- Operational Intelligence;
+- Operational Trends 7/30/90;
+- Unified Knowledge Graph;
+- AI Provider Layer;
+- Executive Dashboard.
 
 Все операции против Bitrix24 выполняются в read-only режиме.
-
-## Возможности 1.0.0-alpha.2
-
-- история operational snapshot;
-- сравнение текущего состояния с периодами 7, 30 и 90 дней;
-- динамика открытых и просроченных задач;
-- изменение доли просрочки;
-- динамика задач без срока;
-- изменение количества сотрудников в зоне риска;
-- сотрудники и подразделения с улучшением или ухудшением;
-- вход в зону риска и выход из неё;
-- визуализация трендов на `/operations`;
-- передача 30-дневного тренда в AI Coach;
-- сохранение Unified Knowledge Graph и Deep Audit из предыдущих версий.
-
-Если snapshot требуемой давности отсутствует, система использует самый ранний доступный snapshot и возвращает фактический интервал сравнения.
 
 ## Конфигурация
 
@@ -76,22 +73,50 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-alpha.2"
+  "version": "1.0.0-beta.1"
 }
 ```
 
-## Dashboard
+## Интерфейсы
+
+Executive Dashboard и AI Coach:
+
+```text
+http://SERVER_IP:8090/
+http://SERVER_IP:8090/executive
+```
+
+Аудит внедрения:
 
 ```text
 http://SERVER_IP:8090/dashboard
+```
+
+Operational Intelligence:
+
+```text
 http://SERVER_IP:8090/operations
 ```
 
-Во вкладке **Динамика** доступны переключатели 7, 30 и 90 дней.
+### Как задавать вопросы Groq
+
+1. открыть `/executive`;
+2. в блоке **AI Coach · Groq** ввести вопрос;
+3. нажать **Спросить Groq**;
+4. для отправки с клавиатуры использовать `Ctrl+Enter`.
+
+Примеры вопросов:
+
+```text
+Почему 20% задач просрочены и что изменить в процессе?
+Какие подразделения требуют внимания в первую очередь?
+Какие процессы стоит автоматизировать?
+Сформируй план улучшений на ближайшие 30 дней.
+```
 
 ## Operational Intelligence API
 
-Собрать свежий snapshot:
+Собрать snapshot:
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8090/operations/collect | jq '.summary'
@@ -103,86 +128,41 @@ curl -sS -X POST http://127.0.0.1:8090/operations/collect | jq '.summary'
 curl -sS http://127.0.0.1:8090/operations/latest | jq '.summary'
 ```
 
-История snapshot:
-
-```bash
-curl -sS 'http://127.0.0.1:8090/operations/history?limit=30' | jq
-```
-
-Тренд за 7 дней:
+Тренды:
 
 ```bash
 curl -sS 'http://127.0.0.1:8090/operations/trends?days=7' | jq
-```
-
-Тренд за 30 дней:
-
-```bash
 curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' | jq
-```
-
-Тренд за 90 дней:
-
-```bash
 curl -sS 'http://127.0.0.1:8090/operations/trends?days=90' | jq
-```
-
-Краткая сводка тренда:
-
-```bash
-curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' \
-  | jq '{status,direction,actual_comparison_days,deltas}'
-```
-
-Сотрудники с ухудшением:
-
-```bash
-curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' \
-  | jq '.employees.worsened'
-```
-
-Подразделения с улучшением:
-
-```bash
-curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' \
-  | jq '.departments.improved'
-```
-
-## Unified Knowledge Graph API
-
-```bash
-curl -sS http://127.0.0.1:8090/knowledge-graph/latest | jq '.summary'
-```
-
-Артефакт сохраняется в:
-
-```text
-/app/artifacts/knowledge-graph/latest.json
 ```
 
 ## AI API
 
-Статус провайдера:
+Статус:
 
 ```bash
 curl -sS http://127.0.0.1:8090/ai/status | jq
 ```
 
-Получить управленческую рекомендацию с учётом 30-дневной динамики:
+Запрос из CLI:
 
 ```bash
 curl -sS -X POST \
   --get \
-  --data-urlencode 'question=Проанализируй динамику за 30 дней и предложи приоритетные действия' \
+  --data-urlencode 'question=Сформируй приоритетный план улучшений' \
   http://127.0.0.1:8090/ai/advice \
   | jq
 ```
 
-Интеграция использует официальный Python SDK `groq`. AI получает агрегированные показатели, тренды, рекомендации и audit evidence.
+Интеграция использует официальный Python SDK `groq`. В AI передаются агрегированные показатели, тренды, рекомендации и audit evidence.
 
 ## Основные API
 
 ```text
+GET  /
+GET  /executive
+GET  /dashboard
+GET  /operations
 GET  /health
 POST /login
 POST /crawl
@@ -190,8 +170,6 @@ GET  /crawl/history
 GET  /crawl/assessment/latest
 GET  /crawl/deep-audit/latest
 GET  /crawl/diff
-GET  /dashboard
-GET  /operations
 POST /operations/collect
 GET  /operations/latest
 GET  /operations/history
@@ -201,22 +179,21 @@ GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения alpha.2
+## Ограничения beta.1
 
-- тренды появляются после накопления минимум двух operational snapshot;
-- для полноценного сравнения 7/30/90 дней snapshot должны регулярно сохраняться;
-- если исторических данных мало, используется самый ранний доступный snapshot;
+- тренды требуют регулярного накопления snapshot;
+- AI работает по агрегированным данным и не заменяет владельцев процессов;
 - показатели сотрудников не являются самостоятельной кадровой оценкой;
-- задачи пока представлены агрегатами, без отдельных task nodes в knowledge graph;
-- AI Coach не заменяет подтверждение владельцами процессов.
+- Process Mining MVP и ROI автоматизации будут добавлены следующими патчами;
+- перед передачей персональных данных во внешний AI требуется корпоративная политика.
 
 ## Roadmap 1.0.0
 
 - `alpha.1` — Unified Knowledge Graph и AI Provider Layer;
 - `alpha.2` — динамика 7/30/90 дней;
 - `alpha.3` — Process Mining MVP;
-- `beta.1` — единый Executive Dashboard;
-- `beta.2` — AI Coach, ROI и приоритизация;
+- `beta.1` — Executive Dashboard и встроенный AI Coach;
+- `beta.2` — ROI, расширенная приоритизация и AI Coach;
 - `1.0.0` — стабилизация, отчёт и документация.
 
 ## Правило разработки
