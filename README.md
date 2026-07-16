@@ -17,11 +17,25 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.2`.
+Browser Worker: `1.0.0-rc.3`.
+
+## Что добавлено в rc.3
+
+### System Health & Data Quality
+
+- диагностика доступности Bitrix24 через Browser URL;
+- проверка работоспособности REST webhook через `user.current`;
+- проверка конфигурации Groq AI;
+- контроль свежести crawl, operational snapshot, Process Mining и Business Architecture Audit;
+- статусы `ok`, `warning`, `stale`, `missing`, `error`;
+- отображение недоступных REST-источников и ошибок прав;
+- сводка качества данных;
+- рекомендации по обновлению устаревших контуров;
+- новая вкладка **Система** в Unified Enterprise Admin.
 
 ## Unified Enterprise Admin
 
-Главный интерфейс теперь объединяет все контуры в одной консоли:
+Главный интерфейс объединяет все контуры в одной консоли:
 
 ```text
 http://SERVER_IP:8090/
@@ -34,7 +48,8 @@ http://SERVER_IP:8090/admin
 - Аудит внедрения;
 - Operational Intelligence;
 - Process Mining;
-- Business Architecture.
+- Business Architecture;
+- System Health.
 
 Переключение выполняется внутри одной страницы без переходов между отдельными URL. Прямые URL старых панелей сохранены для диагностики и совместимости.
 
@@ -66,8 +81,6 @@ http://SERVER_IP:8090/admin
 - Browser evidence по страницам и формам;
 - оценки `readiness`, `architecture`, `efficiency`, `automation`, `governance`.
 
-В `rc.2` сырой JSON в карточках Business Architecture заменён на читаемые показатели и таблицы.
-
 ## Архитектура
 
 ```text
@@ -85,7 +98,8 @@ AI-BIT Enterprise
 │   ├── Process Mining
 │   ├── Business Process Audit
 │   ├── CRM Funnel Audit
-│   └── Document Flow Audit
+│   ├── Document Flow Audit
+│   └── System Health & Data Quality
 └── Interface
     └── Unified Enterprise Admin
 ```
@@ -128,7 +142,7 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-rc.2"
+  "version": "1.0.0-rc.3"
 }
 ```
 
@@ -142,19 +156,50 @@ http://SERVER_IP:8090/dashboard              Аудит внедрения
 http://SERVER_IP:8090/operations             Operational Intelligence
 http://SERVER_IP:8090/processes              Process Mining
 http://SERVER_IP:8090/business-architecture  Business Architecture Audit
+http://SERVER_IP:8090/system                 System Health & Data Quality
 ```
+
+## System Health API
+
+Полная диагностика:
+
+```bash
+curl -sS http://127.0.0.1:8090/system/health | jq
+```
+
+Краткая сводка:
+
+```bash
+curl -sS http://127.0.0.1:8090/system/health \
+  | jq '{overall_status,summary,data_quality}'
+```
+
+Проверка свежести данных:
+
+```bash
+curl -sS http://127.0.0.1:8090/system/health \
+  | jq '.freshness'
+```
+
+Недоступные REST-источники:
+
+```bash
+curl -sS http://127.0.0.1:8090/system/health \
+  | jq '.rights[] | select(.status == "denied")'
+```
+
+Порог свежести:
+
+- Operational snapshot: предупреждение после 24 часов, stale после 48 часов;
+- Crawl: предупреждение после 7 дней, stale после 14 дней;
+- Process Mining: предупреждение после 7 дней, stale после 14 дней;
+- Business Architecture Audit: предупреждение после 7 дней, stale после 14 дней.
 
 ## Сбор данных
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8090/operations/collect -o /tmp/operations.json
 curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect -o /tmp/business-architecture.json
-```
-
-Краткая сводка:
-
-```bash
-jq '{enterprise_health,status,summary}' /tmp/business-architecture.json
 ```
 
 ## Groq AI Coach
@@ -198,6 +243,8 @@ GET  /dashboard
 GET  /operations
 GET  /processes
 GET  /business-architecture
+GET  /system
+GET  /system/health
 POST /operations/collect
 GET  /operations/latest
 GET  /operations/trends?days=7|30|90
@@ -209,13 +256,13 @@ GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения rc.2
+## Ограничения rc.3
 
-- методы бизнес-процессов зависят от редакции Bitrix24 и прав webhook;
-- часть настроек доступна только Browser Worker;
-- документооборот оценивается по совокупности REST, task events и Browser evidence;
+- проверка Groq подтверждает конфигурацию ключа, но не расходует токены на тестовый completion;
+- часть методов бизнес-процессов зависит от редакции Bitrix24 и прав webhook;
+- свежесть отражает время последнего snapshot, а не полноту данных внутри него;
+- Browser check проверяет доступность портала, но не выполняет полную авторизацию;
 - отсутствие evidence не означает отсутствие процесса;
-- точность эффективности растёт после накопления истории;
 - AI не заменяет подтверждение владельцем процесса.
 
 ## Roadmap
@@ -226,5 +273,7 @@ POST /ai/advice
 - `beta.2` — Process Mining;
 - `rc.1` — Business Process, CRM Funnel и Document Flow Audit;
 - `rc.2` — Unified Enterprise Admin;
-- `1.0.0` — стабилизация, отчёт, тесты и документация;
-- `1.1+` — Enterprise-модули и интеграции.
+- `rc.3` — System Health & Data Quality;
+- `rc.4` — Reports & Export;
+- `rc.5` — Scheduling & Automation;
+- `1.0.0` — стабилизация, тесты и релизная документация.
