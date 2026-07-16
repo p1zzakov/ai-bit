@@ -18,15 +18,15 @@ def main() -> None:
     text = replace_once(
         text,
         "from fastapi import FastAPI, HTTPException",
-        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom ai_provider import ai_status, generate_advice\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation\nfrom operational_intelligence import collect_operational_snapshot, read_latest_operational\nfrom operations_dashboard import operations_dashboard_html\nfrom unified_graph import build_unified_graph, save_unified_graph",
+        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom ai_provider import ai_status, generate_advice\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation\nfrom operational_intelligence import collect_operational_snapshot, read_latest_operational\nfrom operational_trends import build_operational_trends, list_operational_snapshots\nfrom operations_dashboard import operations_dashboard_html\nfrom unified_graph import build_unified_graph, save_unified_graph",
         "history imports",
     )
 
     text = text.replace(
         'FastAPI(title="AI-BIT Browser Worker", version="0.5.0")',
-        'FastAPI(title="AI-BIT Browser Worker", version="1.0.0-alpha.1")',
+        'FastAPI(title="AI-BIT Browser Worker", version="1.0.0-alpha.2")',
     )
-    text = text.replace('"version": "0.5.0"', '"version": "1.0.0-alpha.1"')
+    text = text.replace('"version": "0.5.0"', '"version": "1.0.0-alpha.2"')
 
     settings_marker = "settings = Settings()\n"
     text = replace_once(
@@ -93,6 +93,29 @@ async def operations_latest() -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="No operational snapshot is available") from None
 
 
+@app.get("/operations/history")
+async def operations_history(limit: int = Query(default=100, ge=1, le=500)) -> list[dict[str, Any]]:
+    items = list_operational_snapshots(settings.browser_artifacts_dir, limit=limit)
+    return [
+        {
+            "id": item["id"],
+            "generated_at": item["generated_at"],
+            "summary": item["summary"],
+        }
+        for item in items
+    ]
+
+
+@app.get("/operations/trends")
+async def operations_trends(days: int = Query(default=30)) -> dict[str, Any]:
+    try:
+        return build_operational_trends(settings.browser_artifacts_dir, days=days)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="No operational snapshots are available") from None
+
+
 @app.get("/knowledge-graph/latest")
 async def knowledge_graph_latest() -> dict[str, Any]:
     crawl = None
@@ -121,6 +144,7 @@ async def get_ai_status() -> dict[str, Any]:
 async def ai_advice(question: str = Query(default="Сформируй приоритетный план улучшения внедрения Bitrix24")) -> dict[str, Any]:
     crawl = None
     operations = None
+    trends = None
     try:
         crawl = CRAWL_HISTORY.latest()
     except FileNotFoundError:
@@ -129,11 +153,22 @@ async def ai_advice(question: str = Query(default="Сформируй приор
         operations = read_latest_operational(settings.browser_artifacts_dir)
     except FileNotFoundError:
         pass
+    try:
+        trends = build_operational_trends(settings.browser_artifacts_dir, days=30)
+    except (FileNotFoundError, ValueError):
+        pass
     graph = build_unified_graph(crawl, operations)
     compact_context = {
         "graph_summary": graph.get("summary"),
         "recommendations": graph.get("recommendations", [])[:50],
         "operations_summary": (operations or {}).get("summary", {}),
+        "operations_trend_30d": {
+            "status": (trends or {}).get("status"),
+            "direction": (trends or {}).get("direction"),
+            "deltas": (trends or {}).get("deltas", {}),
+            "worsened_employees": (trends or {}).get("employees", {}).get("worsened", [])[:10],
+            "worsened_departments": (trends or {}).get("departments", {}).get("worsened", [])[:10],
+        },
         "implementation": (crawl or {}).get("assessment", {}),
         "deep_audit_summary": (crawl or {}).get("deep_audit", {}).get("summary", {}),
     }
@@ -208,7 +243,7 @@ async def crawl_diff(before: str, after: str) -> dict[str, Any]:
     text = text.replace(marker, endpoints + marker, 1)
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT unified intelligence patch 1.0.0-alpha.1")
+    print("Applied AI-BIT trends patch 1.0.0-alpha.2")
 
 
 if __name__ == "__main__":
