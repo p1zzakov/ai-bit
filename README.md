@@ -10,18 +10,35 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 1. Только read-only работа с Bitrix24.
 2. Каждый вывод должен иметь REST, Browser или Operational evidence.
-3. Недостаток данных возвращается как `partial` или `insufficient_data`, а не как положительная оценка.
+3. Недостаток данных возвращается как `partial` или `insufficient_data`.
 4. AI работает только по переданным фактам.
 5. Рекомендации содержат проблему, действие и приоритет.
 6. Оценки должны быть воспроизводимыми и объяснимыми.
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.1`.
+Browser Worker: `1.0.0-rc.2`.
+
+## Unified Enterprise Admin
+
+Главный интерфейс теперь объединяет все контуры в одной консоли:
+
+```text
+http://SERVER_IP:8090/
+http://SERVER_IP:8090/admin
+```
+
+Вкладки:
+
+- Executive;
+- Аудит внедрения;
+- Operational Intelligence;
+- Process Mining;
+- Business Architecture.
+
+Переключение выполняется внутри одной страницы без переходов между отдельными URL. Прямые URL старых панелей сохранены для диагностики и совместимости.
 
 ## Business Architecture Audit
-
-В `rc.1` добавлены три самостоятельных контура.
 
 ### Business Process Audit
 
@@ -49,7 +66,7 @@ Browser Worker: `1.0.0-rc.1`.
 - Browser evidence по страницам и формам;
 - оценки `readiness`, `architecture`, `efficiency`, `automation`, `governance`.
 
-Executive Dashboard показывает отдельно зрелость внедрения, бизнес-процессы, CRM-воронки, документооборот и общий `Enterprise Health`.
+В `rc.2` сырой JSON в карточках Business Architecture заменён на читаемые показатели и таблицы.
 
 ## Архитектура
 
@@ -69,11 +86,8 @@ AI-BIT Enterprise
 │   ├── Business Process Audit
 │   ├── CRM Funnel Audit
 │   └── Document Flow Audit
-└── Future Plugins
-    ├── 1C
-    ├── Power BI
-    ├── HR Intelligence
-    └── Finance Intelligence
+└── Interface
+    └── Unified Enterprise Admin
 ```
 
 ## Конфигурация
@@ -92,7 +106,7 @@ AI_MODEL=llama-3.3-70b-versatile
 GROQ_API_KEY=
 ```
 
-Webhook должен иметь read-доступ к CRM, пользователям, структуре, задачам и бизнес-процессам. Недоступные методы не останавливают аудит: соответствующий контур получает `partial` или `insufficient_data`.
+Webhook должен иметь read-доступ к CRM, пользователям, структуре, задачам и бизнес-процессам.
 
 ## Развёртывание
 
@@ -114,14 +128,15 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-rc.1"
+  "version": "1.0.0-rc.2"
 }
 ```
 
 ## Интерфейсы
 
 ```text
-http://SERVER_IP:8090/                       Executive Dashboard и AI Coach
+http://SERVER_IP:8090/                       Unified Enterprise Admin
+http://SERVER_IP:8090/admin                  Unified Enterprise Admin
 http://SERVER_IP:8090/executive              Executive Dashboard и AI Coach
 http://SERVER_IP:8090/dashboard              Аудит внедрения
 http://SERVER_IP:8090/operations             Operational Intelligence
@@ -131,15 +146,8 @@ http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 
 ## Сбор данных
 
-Сначала обновить operational snapshot:
-
 ```bash
-curl -sS -X POST http://127.0.0.1:8090/operations/collect -o /tmp/operations-rc1.json
-```
-
-Затем запустить Business Architecture Audit:
-
-```bash
+curl -sS -X POST http://127.0.0.1:8090/operations/collect -o /tmp/operations.json
 curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect -o /tmp/business-architecture.json
 ```
 
@@ -149,33 +157,15 @@ curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect -o /tmp/bus
 jq '{enterprise_health,status,summary}' /tmp/business-architecture.json
 ```
 
-## Business Architecture API
-
-```bash
-curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect | jq
-curl -sS http://127.0.0.1:8090/business-architecture/latest | jq
-curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.domains.business_processes'
-curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.domains.crm'
-curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.domains.documents'
-```
-
-Рекомендации высокого приоритета:
-
-```bash
-curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.recommendations[] | select(.severity == "high" or .severity == "critical")'
-```
-
 ## Groq AI Coach
 
-AI Coach на `/executive` получает implementation audit, operational summary, тренды, Process Mining и Business Architecture Audit.
+AI Coach получает implementation audit, operational summary, тренды, Process Mining и Business Architecture Audit.
 
 Примеры вопросов:
 
 ```text
 Какие бизнес-процессы настроены неправильно и почему?
-Где чаще всего зависают согласования?
 Какие стадии CRM-воронки нужно убрать или объединить?
-Почему сделки остаются без следующего действия?
 Насколько готов документооборот?
 Что автоматизировать в первую очередь?
 ```
@@ -202,6 +192,7 @@ Evidence: `complete`, `partial`, `missing`.
 
 ```text
 GET  /
+GET  /admin
 GET  /executive
 GET  /dashboard
 GET  /operations
@@ -218,7 +209,7 @@ GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения rc.1
+## Ограничения rc.2
 
 - методы бизнес-процессов зависят от редакции Bitrix24 и прав webhook;
 - часть настроек доступна только Browser Worker;
@@ -234,5 +225,6 @@ POST /ai/advice
 - `beta.1` — Executive Dashboard и AI Coach;
 - `beta.2` — Process Mining;
 - `rc.1` — Business Process, CRM Funnel и Document Flow Audit;
+- `rc.2` — Unified Enterprise Admin;
 - `1.0.0` — стабилизация, отчёт, тесты и документация;
 - `1.1+` — Enterprise-модули и интеграции.
