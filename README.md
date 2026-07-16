@@ -1,67 +1,55 @@
 # AI-BIT
 
-AI-BIT — read-only платформа для технического, функционального и управленческого аудита коробочного Bitrix24.
+AI-BIT — read-only платформа технического, функционального и операционного аудита коробочного Bitrix24.
 
-Текущая версия Browser Worker: **0.8.0**.
+## Текущая версия
+
+Browser Worker: `0.9.0`.
 
 ## Архитектура
 
-AI-BIT объединяет пять слоёв:
+AI-BIT объединяет пять контуров:
 
-- **REST Collector** — пользователи, структура, CRM, задачи, группы и бизнес-процессы;
-- **Browser Worker** — интерфейсы и настройки, которых нет в REST;
-- **Portal Crawler** — обнаружение внутренних страниц и построение карты портала;
-- **Implementation Assessment** — оценка покрытия типовой целевой модели Bitrix24;
-- **Deep Audit Engine** — рекомендации по модулям и каждой обнаруженной странице.
+- **REST Collector** — пользователи, подразделения, задачи, CRM и другие сущности;
+- **Browser Worker** — UI-разделы и настройки, которых нет в REST;
+- **Portal Crawler** — карта внутренних страниц;
+- **Deep Audit** — рекомендации по модулям и страницам;
+- **Operational Intelligence** — нагрузка сотрудников, просрочка, дисциплина сроков и риски подразделений.
 
 Все операции против Bitrix24 выполняются в read-only режиме.
 
-## Возможности 0.8.0
+## Возможности 0.9.0
 
-- браузерная авторизация и сохранение сессии;
-- scanner известных разделов;
-- same-origin crawler с контрольными стартовыми маршрутами;
-- HTTP-, JavaScript- и network-диагностика;
-- screenshot, HTML и evidence JSON;
-- история crawl-запусков и diff;
+### Аудит внедрения
+
 - implementation score;
-- матрица `used / needs_configuration / blocked / not_detected`;
-- глубокий аудит CRM, задач, структуры, цифровых процессов, рабочих групп, диска, календаря, базы знаний и RPA;
-- рекомендации по каждому модулю;
+- матрица используемых и недоступных модулей;
+- deep audit CRM, задач, структуры, процессов, диска и других разделов;
 - рекомендации по каждой обнаруженной странице;
-- приоритетный план действий;
-- новый dashboard на `/dashboard`.
+- приоритетный план оптимизации;
+- история crawl-запусков и diff.
 
-## Структура проекта
+### Operational Intelligence
 
-```text
-/opt/ai-bit/
-├── app/                               # REST backend
-├── browser-worker/
-│   ├── app.py                         # базовый Browser Worker
-│   ├── crawler.py                     # Portal Crawler
-│   ├── history.py                     # история и diff
-│   ├── implementation_analysis.py     # implementation score
-│   ├── deep_audit.py                  # Deep Audit Engine 0.8.0
-│   ├── dashboard.py                   # HTML dashboard
-│   ├── presets.json                   # известные разделы
-│   ├── build_patch.py
-│   ├── crawler_patch.py
-│   ├── history_patch.py
-│   └── Dockerfile
-├── reports/
-├── docker-compose.yml
-├── .env
-└── .env.example
-```
+- активные пользователи и подразделения;
+- открытые и завершённые задачи;
+- просроченные задачи и доля просрочки;
+- задачи без крайнего срока;
+- средний возраст открытых задач;
+- среднее время закрытия;
+- нагрузка и риск перегрузки сотрудников;
+- аналитика подразделений;
+- управленческие рекомендации;
+- сохранение operational snapshots для дальнейшей динамики.
+
+Operational Intelligence не является рейтингом ценности сотрудников. Метрики показывают дисциплину исполнения, качество планирования и риск перегрузки.
 
 ## Развёртывание
 
 ```bash
 cd /opt/ai-bit
-
+git switch agent/import-current-ai-bit
 git pull
-
 docker compose build --no-cache browser-worker
 docker compose up -d browser-worker
 ```
@@ -72,11 +60,11 @@ docker compose up -d browser-worker
 curl -sS http://127.0.0.1:8090/health | jq
 ```
 
-Ожидаем:
+Ожидаемая версия:
 
 ```json
 {
-  "version": "0.8.0"
+  "version": "0.9.0"
 }
 ```
 
@@ -93,9 +81,59 @@ BROWSER_TIMEOUT_MS=45000
 BROWSER_IGNORE_HTTPS_ERRORS=false
 ```
 
+Webhook должен иметь read-доступ минимум к пользователям, структуре компании и задачам.
+
 Не коммитьте `.env`, webhook URL, пароли, токены и browser storage state.
 
-## Запуск crawler
+## Dashboard
+
+Аудит внедрения:
+
+```text
+http://SERVER_IP:8090/dashboard
+```
+
+Operational Intelligence:
+
+```text
+http://SERVER_IP:8090/operations
+```
+
+## Operational Intelligence API
+
+Собрать свежий snapshot:
+
+```bash
+curl -sS -X POST \
+  http://127.0.0.1:8090/operations/collect \
+  | jq
+```
+
+Получить последний snapshot:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/operations/latest \
+  | jq
+```
+
+Краткая сводка:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/operations/latest \
+  | jq '.summary'
+```
+
+Сотрудники с высоким риском:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/operations/latest \
+  | jq '.employees[] | select(.risk == "critical" or .risk == "high")'
+```
+
+## Crawler
 
 ```bash
 curl -sS -X POST \
@@ -112,156 +150,62 @@ curl -sS -X POST \
   -o /tmp/crawl.json
 ```
 
-Crawler автоматически:
-
-1. открывает портал под технической учётной записью;
-2. запускает обход с главной страницы и контрольных разделов Bitrix24;
-3. извлекает внутренние ссылки;
-4. исключает static, logout, download, ajax и REST URL;
-5. классифицирует страницы по разделам;
-6. сохраняет карту портала;
-7. рассчитывает implementation assessment;
-8. рассчитывает deep audit;
-9. сохраняет запуск в историю.
-
-## Dashboard
+## Основные API
 
 ```text
-http://SERVER_IP:8090/dashboard
+GET  /health
+POST /login
+POST /crawl
+GET  /crawl/history
+GET  /crawl/assessment/latest
+GET  /crawl/deep-audit/latest
+GET  /crawl/diff
+GET  /dashboard
+GET  /operations
+POST /operations/collect
+GET  /operations/latest
 ```
 
-Вкладки dashboard:
+## Артефакты
 
-- **Обзор** — implementation score и текущее покрытие;
-- **Глубокий аудит модулей** — цель модуля, контрольные точки, состояние и рекомендации;
-- **Аудит страниц** — риск, evidence и рекомендации по каждой странице;
-- **План действий** — приоритетные изменения и ожидаемый эффект;
-- **Карта портала** — дерево и список обнаруженных страниц;
-- **Изменения** — diff между crawl-запусками.
-
-## API
-
-### Авторизация
-
-```bash
-curl -sS -X POST \
-  'http://127.0.0.1:8090/login?force=true' \
-  -H 'Content-Type: application/json' \
-  -d '{}' | jq
+```text
+/app/artifacts/history/crawl-*.json
+/app/artifacts/operations/operations-*.json
+/app/artifacts/operations/latest.json
+/app/artifacts/latest-crawl.json
 ```
 
-### История
+При стандартном compose volume данные находятся на host в:
 
-```bash
-curl -sS http://127.0.0.1:8090/crawl/history | jq
-curl -sS http://127.0.0.1:8090/crawl/history/crawl-ID | jq
+```text
+/opt/ai-bit/reports/ui/
 ```
 
-### Implementation Assessment
+## Ограничения 0.9.0
 
-```bash
-curl -sS http://127.0.0.1:8090/crawl/assessment/latest | jq
-curl -sS http://127.0.0.1:8090/crawl/assessment/crawl-ID | jq
-```
+- аналитика зависит от прав webhook;
+- текущая версия анализирует задачи, доступные webhook-пользователю;
+- сложность и бизнес-ценность задач пока не оцениваются;
+- показатели сотрудника нельзя использовать как самостоятельную кадровую оценку;
+- динамика между operational snapshots будет визуализирована в `1.0.0`;
+- CRM-воронки, роботы и триггеры требуют отдельного расширения REST collector.
 
-### Deep Audit 0.8.0
+## Roadmap 1.0.0 — AI Management Advisor
 
-```bash
-curl -sS http://127.0.0.1:8090/crawl/deep-audit/latest | jq
-curl -sS http://127.0.0.1:8090/crawl/deep-audit/crawl-ID | jq
-```
-
-Краткая сводка:
-
-```bash
-curl -sS http://127.0.0.1:8090/crawl/deep-audit/latest \
-  | jq '{version, summary, action_plan}'
-```
-
-### Diff
-
-```bash
-curl -sS \
-  'http://127.0.0.1:8090/crawl/diff?before=crawl-OLD&after=crawl-NEW' | jq
-```
-
-## Методика Deep Audit
-
-Версия 0.8.0 использует browser evidence:
-
-- URL и раздел;
-- заголовок;
-- HTTP и функциональный статус;
-- глубину страницы;
-- количество ссылок;
-- видимый текст;
-- наличие признаков SLA, ответственного, статусов и этапов.
-
-На основе этих данных движок формирует:
-
-- состояние модуля;
-- перечень контрольных точек;
-- рекомендации по оптимизации;
-- рекомендации по каждой странице;
-- приоритетный план действий.
-
-Это экспертная эвристика. Она не заменяет интервью с владельцами процессов и пока не анализирует внутренние настройки CRM, роботов и фактические показатели задач.
-
-## Ограничения 0.8.0
-
-- crawler видит в основном страницы и ссылки, доступные технической учётной записи;
-- JavaScript-only сценарии могут требовать отдельных preset-проверок;
-- рекомендации по страницам строятся по browser evidence;
-- воронки, стадии, поля, роботы, триггеры и задачи требуют REST-аналитики;
-- пользовательская эффективность не рассчитывается до версии 0.9.0;
-- `not_detected` не всегда означает физическое отсутствие модуля.
-
-## Roadmap до 1.0.0
-
-### 0.8.0 — Deep Audit
-
-- глубокий аудит модулей;
-- рекомендации по каждой странице;
-- контрольные точки по CRM, задачам и процессам;
-- план действий с приоритетами;
-- evidence-based dashboard.
-
-### 0.9.0 — Operational Intelligence
-
-- аналитика пользователей;
-- аналитика подразделений;
-- открытые, завершённые и просроченные задачи;
-- задачи без срока и результата;
-- нагрузка и риск перегрузки;
-- тренды за 7/30/90 дней;
-- CRM-дисциплина и зависшие сделки;
-- управленческий dashboard.
-
-### 1.0.0 — AI Management Advisor
-
-- единый REST + Browser knowledge graph;
-- process mining;
+- единый Browser + REST knowledge graph;
 - Executive Dashboard;
-- AI Coach: почему плохо, как исправить и какой эффект;
-- оценка ROI автоматизации;
-- план цифровой трансформации;
+- динамика 7/30/90 дней;
+- process mining;
+- анализ CRM-воронок, стадий, роботов и триггеров;
+- выявление повторяющихся ручных операций;
+- оценка потенциального эффекта автоматизации;
+- AI Coach: проблема → причина → решение → риск → эффект;
 - управленческий PDF/Excel отчёт;
-- непрерывный аудит и динамика зрелости.
-
-## Безопасность
-
-- использовать отдельную техническую учётную запись;
-- не публиковать порты 8080/8090 в интернет;
-- ограничить доступ корпоративной сетью или VPN;
-- не добавлять write scopes;
-- не использовать личную учётную запись администратора;
-- не коммитить секреты и browser storage state.
+- план цифровой трансформации.
 
 ## Правило разработки
 
-Все изменения выполняются через Git:
-
-1. изменения в feature-ветке;
+1. изменения выполняются в ветке;
 2. commit и push;
 3. `git pull` на сервере;
 4. пересборка контейнера;
