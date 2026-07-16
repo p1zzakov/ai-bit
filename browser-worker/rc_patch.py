@@ -17,11 +17,26 @@ def main() -> None:
     text = replace_once(
         text,
         "from ai_provider import ai_status, generate_advice",
-        "from ai_provider import ai_status, generate_advice\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html",
-        "business architecture imports",
+        "from ai_provider import ai_status, generate_advice\nfrom admin_dashboard import admin_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html",
+        "business architecture and admin imports",
     )
-    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.1"')
-    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.1"')
+    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.2"')
+    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.2"')
+
+    root_marker = '''@app.get("/", response_class=HTMLResponse)
+async def executive_root() -> str:
+    return executive_dashboard_html()
+'''
+    root_replacement = '''@app.get("/", response_class=HTMLResponse)
+async def admin_root() -> str:
+    return admin_dashboard_html()
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_dashboard() -> str:
+    return admin_dashboard_html()
+'''
+    text = replace_once(text, root_marker, root_replacement, "unified admin root")
 
     marker = '''@app.get("/processes", response_class=HTMLResponse)
 async def process_dashboard() -> str:
@@ -98,7 +113,7 @@ async def business_architecture_latest() -> dict[str, Any]:
     text = replace_once(text, context_marker, context_addition, "AI business architecture context")
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT Business Architecture Audit patch 1.0.0-rc.1")
+    print("Applied AI-BIT unified admin patch 1.0.0-rc.2")
 
 
 if __name__ == "__main__":
