@@ -4,36 +4,36 @@ AI-BIT — read-only платформа технического, функцио
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-beta.1`.
+Browser Worker: `1.0.0-beta.2`.
 
-## Что добавлено в beta.1
+## Что добавлено в beta.2
 
-- единый Executive Dashboard;
-- главная страница `/` и отдельный маршрут `/executive`;
-- сводка зрелости внедрения, задач, просрочки, риска и 30-дневного тренда;
-- блок главных управленческих рисков;
-- блок приоритетных действий;
-- встроенный AI Coach на Groq прямо в браузере;
-- быстрые запросы: главные риски, план на 30 дней, кандидаты на автоматизацию;
-- произвольный вопрос к Groq без использования `curl`;
-- ответы AI формируются по текущему crawl, Operational Intelligence и трендам;
-- тренды не показывают ложные нулевые изменения, если snapshot собраны в один день.
+- Process Mining MVP;
+- компактные task events в operational snapshot;
+- группировка повторяющихся задач по нормализованному названию;
+- кандидаты на шаблоны задач и бизнес-процессы;
+- повторяющиеся маршруты `постановщик → исполнитель`;
+- выявление потенциальных ручных диспетчерских узлов;
+- automation score для приоритизации;
+- ориентировочная оценка ручного времени;
+- отдельный Process Mining Dashboard;
+- передача выводов Process Mining в Groq AI Coach.
+
+Все операции против Bitrix24 выполняются в read-only режиме.
 
 ## Архитектура
 
 AI-BIT объединяет:
 
 - REST Collector;
-- Browser Worker;
-- Portal Crawler;
+- Browser Worker и Portal Crawler;
 - Deep Audit;
 - Operational Intelligence;
 - Operational Trends 7/30/90;
+- Process Mining;
 - Unified Knowledge Graph;
-- AI Provider Layer;
+- AI Provider Layer на Groq;
 - Executive Dashboard.
-
-Все операции против Bitrix24 выполняются в read-only режиме.
 
 ## Конфигурация
 
@@ -74,98 +74,115 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-beta.1"
+  "version": "1.0.0-beta.2"
 }
 ```
 
 ## Интерфейсы
 
-Executive Dashboard и AI Coach:
-
 ```text
-http://SERVER_IP:8090/
-http://SERVER_IP:8090/executive
+http://SERVER_IP:8090/           Executive Dashboard и AI Coach
+http://SERVER_IP:8090/executive  Executive Dashboard и AI Coach
+http://SERVER_IP:8090/dashboard  Аудит внедрения
+http://SERVER_IP:8090/operations Operational Intelligence
+http://SERVER_IP:8090/processes  Process Mining
 ```
 
-Аудит внедрения:
+## Сбор данных
 
-```text
-http://SERVER_IP:8090/dashboard
+После обновления обязательно собрать новый snapshot: старые snapshot не содержат `task_events`.
+
+```bash
+curl -sS -X POST \
+  http://127.0.0.1:8090/operations/collect \
+  -o /tmp/operations-beta2.json
 ```
 
-Operational Intelligence:
+Проверка:
 
-```text
-http://SERVER_IP:8090/operations
+```bash
+jq '{summary, process_mining_summary}' /tmp/operations-beta2.json
 ```
 
-### Как задавать вопросы Groq
+## Process Mining API
 
-1. открыть `/executive`;
-2. в блоке **AI Coach · Groq** ввести вопрос;
-3. нажать **Спросить Groq**;
-4. для отправки с клавиатуры использовать `Ctrl+Enter`.
+```bash
+curl -sS \
+  http://127.0.0.1:8090/process-mining/latest \
+  | jq
+```
+
+Краткая сводка:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/process-mining/latest \
+  | jq '.summary'
+```
+
+Кандидаты на автоматизацию:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/process-mining/latest \
+  | jq '.automation_candidates[] | {
+      sample_title,
+      count,
+      overdue,
+      without_deadline,
+      automation_score,
+      estimated_manual_minutes,
+      recommendation
+    }'
+```
+
+Повторяющиеся маршруты:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/process-mining/latest \
+  | jq '.handoff_routes'
+```
+
+Потенциальные узкие места:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/process-mining/latest \
+  | jq '.bottlenecks'
+```
+
+## Как считается Process Mining MVP
+
+- названия задач приводятся к нижнему регистру;
+- из названий удаляются URL, номера и служебные слова;
+- одинаковые нормализованные названия группируются;
+- паттерн с тремя и более задачами считается повторяющимся;
+- отдельно анализируются устойчивые пары постановщик → исполнитель;
+- automation score повышается при высокой частоте, просрочке и задачах без срока;
+- оценка ручного времени использует базовое допущение: 5 минут на повторяющуюся операцию.
+
+Оценка времени не является подтверждённым ROI. Перед внедрением владелец процесса должен подтвердить частоту, сложность и стоимость ручной операции.
+
+## Groq AI Coach
+
+AI Coach доступен на `/executive`. Он получает:
+
+- audit evidence;
+- operational summary;
+- тренды;
+- кандидатов на автоматизацию;
+- повторяющиеся маршруты;
+- потенциальные узкие места.
 
 Примеры вопросов:
 
 ```text
-Почему 20% задач просрочены и что изменить в процессе?
-Какие подразделения требуют внимания в первую очередь?
-Какие процессы стоит автоматизировать?
-Сформируй план улучшений на ближайшие 30 дней.
+Какие повторяющиеся задачи стоит автоматизировать первыми?
+Какие маршруты постановщик → исполнитель похожи на ручную диспетчеризацию?
+Сформируй план автоматизации на 30 дней.
+Какие кандидаты дадут максимальную экономию времени?
 ```
-
-## Operational Intelligence API
-
-Собрать snapshot:
-
-```bash
-curl -sS -X POST http://127.0.0.1:8090/operations/collect | jq '.summary'
-```
-
-Последний snapshot:
-
-```bash
-curl -sS http://127.0.0.1:8090/operations/latest | jq '.summary'
-```
-
-Тренды:
-
-```bash
-curl -sS 'http://127.0.0.1:8090/operations/trends?days=7' | jq
-curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' | jq
-curl -sS 'http://127.0.0.1:8090/operations/trends?days=90' | jq
-```
-
-Если все доступные snapshot созданы в один календарный день, API возвращает:
-
-```json
-{
-  "status": "insufficient_history",
-  "direction": "unknown",
-  "message": "Snapshot собраны в течение одного дня. Реальная динамика появится после следующего дневного среза."
-}
-```
-
-## AI API
-
-Статус:
-
-```bash
-curl -sS http://127.0.0.1:8090/ai/status | jq
-```
-
-Запрос из CLI:
-
-```bash
-curl -sS -X POST \
-  --get \
-  --data-urlencode 'question=Сформируй приоритетный план улучшений' \
-  http://127.0.0.1:8090/ai/advice \
-  | jq
-```
-
-Интеграция использует официальный Python SDK `groq`. В AI передаются агрегированные показатели, тренды, рекомендации и audit evidence.
 
 ## Основные API
 
@@ -174,6 +191,7 @@ GET  /
 GET  /executive
 GET  /dashboard
 GET  /operations
+GET  /processes
 GET  /health
 POST /login
 POST /crawl
@@ -185,28 +203,29 @@ POST /operations/collect
 GET  /operations/latest
 GET  /operations/history
 GET  /operations/trends?days=7|30|90
+GET  /process-mining/latest
 GET  /knowledge-graph/latest
 GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения beta.1
+## Ограничения beta.2
 
-- тренды требуют регулярного накопления snapshot;
-- несколько snapshot в один день подтверждают текущее состояние, но не считаются временной динамикой;
-- AI работает по агрегированным данным и не заменяет владельцев процессов;
+- качество Process Mining зависит от дисциплины наименования задач;
+- одинаковое название не гарантирует одинаковый бизнес-процесс;
+- задачи из старых snapshot не участвуют в анализе;
+- оценка времени ориентировочная и не является финансовым эффектом;
 - показатели сотрудников не являются самостоятельной кадровой оценкой;
-- Process Mining MVP и ROI автоматизации будут добавлены следующими патчами;
 - перед передачей персональных данных во внешний AI требуется корпоративная политика.
 
 ## Roadmap 1.0.0
 
 - `alpha.1` — Unified Knowledge Graph и AI Provider Layer;
 - `alpha.2` — динамика 7/30/90 дней;
-- `alpha.3` — Process Mining MVP;
+- `alpha.3` — Process Mining MVP, реализован в составе beta.2;
 - `beta.1` — Executive Dashboard и встроенный AI Coach;
-- `beta.2` — ROI, расширенная приоритизация и AI Coach;
-- `1.0.0` — стабилизация, отчёт и документация.
+- `beta.2` — Process Mining, первичная оценка эффекта и расширенный AI Coach;
+- `1.0.0` — стабилизация, управленческий отчёт и документация.
 
 ## Правило разработки
 
