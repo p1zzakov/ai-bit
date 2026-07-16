@@ -10,6 +10,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py ./app.py
 COPY login_debug.py ./login_debug.py
+COPY build_patch.py ./build_patch.py
+RUN python ./build_patch.py \
+    && python -m py_compile ./app.py ./login_debug.py
 RUN mkdir -p /app/artifacts /app/state
 
 EXPOSE 8090
