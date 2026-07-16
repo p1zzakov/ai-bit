@@ -18,15 +18,15 @@ def main() -> None:
     text = replace_once(
         text,
         "from fastapi import FastAPI, HTTPException",
-        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom ai_provider import ai_status, generate_advice\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation\nfrom operational_intelligence import collect_operational_snapshot, read_latest_operational\nfrom operational_trends import build_operational_trends, list_operational_snapshots\nfrom operations_dashboard import operations_dashboard_html\nfrom unified_graph import build_unified_graph, save_unified_graph",
+        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom ai_provider import ai_status, generate_advice\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom executive_dashboard import executive_dashboard_html\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation\nfrom operational_intelligence import collect_operational_snapshot, read_latest_operational\nfrom operational_trends import build_operational_trends, list_operational_snapshots\nfrom operations_dashboard import operations_dashboard_html\nfrom unified_graph import build_unified_graph, save_unified_graph",
         "history imports",
     )
 
     text = text.replace(
         'FastAPI(title="AI-BIT Browser Worker", version="0.5.0")',
-        'FastAPI(title="AI-BIT Browser Worker", version="1.0.0-alpha.2")',
+        'FastAPI(title="AI-BIT Browser Worker", version="1.0.0-beta.1")',
     )
-    text = text.replace('"version": "0.5.0"', '"version": "1.0.0-alpha.2"')
+    text = text.replace('"version": "0.5.0"', '"version": "1.0.0-beta.1"')
 
     settings_marker = "settings = Settings()\n"
     text = replace_once(
@@ -67,7 +67,17 @@ def main() -> None:
     marker = '''@app.get("/crawl/latest")
 async def latest_crawl() -> dict[str, Any]:
 '''
-    endpoints = '''@app.get("/dashboard", response_class=HTMLResponse)
+    endpoints = '''@app.get("/", response_class=HTMLResponse)
+async def executive_root() -> str:
+    return executive_dashboard_html()
+
+
+@app.get("/executive", response_class=HTMLResponse)
+async def executive_dashboard() -> str:
+    return executive_dashboard_html()
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard() -> str:
     return dashboard_html()
 
@@ -96,14 +106,7 @@ async def operations_latest() -> dict[str, Any]:
 @app.get("/operations/history")
 async def operations_history(limit: int = Query(default=100, ge=1, le=500)) -> list[dict[str, Any]]:
     items = list_operational_snapshots(settings.browser_artifacts_dir, limit=limit)
-    return [
-        {
-            "id": item["id"],
-            "generated_at": item["generated_at"],
-            "summary": item["summary"],
-        }
-        for item in items
-    ]
+    return [{"id": item["id"], "generated_at": item["generated_at"], "summary": item["summary"]} for item in items]
 
 
 @app.get("/operations/trends")
@@ -165,6 +168,7 @@ async def ai_advice(question: str = Query(default="Сформируй приор
         "operations_trend_30d": {
             "status": (trends or {}).get("status"),
             "direction": (trends or {}).get("direction"),
+            "actual_comparison_days": (trends or {}).get("actual_comparison_days"),
             "deltas": (trends or {}).get("deltas", {}),
             "worsened_employees": (trends or {}).get("employees", {}).get("worsened", [])[:10],
             "worsened_departments": (trends or {}).get("departments", {}).get("worsened", [])[:10],
@@ -243,7 +247,7 @@ async def crawl_diff(before: str, after: str) -> dict[str, Any]:
     text = text.replace(marker, endpoints + marker, 1)
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT trends patch 1.0.0-alpha.2")
+    print("Applied AI-BIT executive dashboard patch 1.0.0-beta.1")
 
 
 if __name__ == "__main__":
