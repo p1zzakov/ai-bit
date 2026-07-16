@@ -4,45 +4,55 @@ AI-BIT — read-only платформа технического, функцио
 
 ## Текущая версия
 
-Browser Worker: `0.9.0`.
+Browser Worker: `1.0.0-alpha.1`.
 
 ## Архитектура
 
-AI-BIT объединяет пять контуров:
+AI-BIT объединяет семь контуров:
 
 - **REST Collector** — пользователи, подразделения, задачи, CRM и другие сущности;
 - **Browser Worker** — UI-разделы и настройки, которых нет в REST;
 - **Portal Crawler** — карта внутренних страниц;
 - **Deep Audit** — рекомендации по модулям и страницам;
-- **Operational Intelligence** — нагрузка сотрудников, просрочка, дисциплина сроков и риски подразделений.
+- **Operational Intelligence** — нагрузка, просрочка и риски подразделений;
+- **Unified Knowledge Graph** — связь пользователей, подразделений, модулей, страниц и рекомендаций;
+- **AI Provider Layer** — экспертные рекомендации через Groq с возможностью смены провайдера.
 
 Все операции против Bitrix24 выполняются в read-only режиме.
 
-## Возможности 0.9.0
+## Возможности 1.0.0-alpha.1
 
-### Аудит внедрения
+- объединение последнего crawl и operational snapshot в единый knowledge graph;
+- узлы: модули, страницы, пользователи, подразделения, рекомендации;
+- связи: принадлежность страниц модулям и сотрудников подразделениям;
+- единый API для последующего Executive Dashboard и Process Mining;
+- AI status endpoint;
+- AI Coach MVP через Groq API;
+- передача в AI только агрегированного контекста и evidence;
+- защита от выдуманных данных через системное требование работать только по фактам.
 
-- implementation score;
-- матрица используемых и недоступных модулей;
-- deep audit CRM, задач, структуры, процессов, диска и других разделов;
-- рекомендации по каждой обнаруженной странице;
-- приоритетный план оптимизации;
-- история crawl-запусков и diff.
+## Почему Groq
 
-### Operational Intelligence
+Groq используется как основной inference-провайдер из-за высокой скорости ответа и OpenAI-совместимого API. Архитектура не привязана к одному поставщику: провайдер и модель задаются переменными окружения.
 
-- активные пользователи и подразделения;
-- открытые и завершённые задачи;
-- просроченные задачи и доля просрочки;
-- задачи без крайнего срока;
-- средний возраст открытых задач;
-- среднее время закрытия;
-- нагрузка и риск перегрузки сотрудников;
-- аналитика подразделений;
-- управленческие рекомендации;
-- сохранение operational snapshots для дальнейшей динамики.
+## Конфигурация
 
-Operational Intelligence не является рейтингом ценности сотрудников. Метрики показывают дисциплину исполнения, качество планирования и риск перегрузки.
+```env
+BITRIX_WEBHOOK_URL=https://bitrix.example.kz/rest/USER_ID/SECRET/
+BROWSER_BASE_URL=https://bitrix.example.kz
+BROWSER_LOGIN_PATH=/auth/
+BROWSER_LOGIN=ai-admin
+BROWSER_PASSWORD=change-me
+BROWSER_HEADLESS=true
+BROWSER_TIMEOUT_MS=45000
+BROWSER_IGNORE_HTTPS_ERRORS=false
+
+AI_PROVIDER=groq
+AI_MODEL=llama-3.3-70b-versatile
+GROQ_API_KEY=
+```
+
+Не коммитьте `.env`, webhook URL, пароли, токены, Groq API key и browser storage state.
 
 ## Развёртывание
 
@@ -64,91 +74,52 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "0.9.0"
+  "version": "1.0.0-alpha.1"
 }
 ```
 
-## Конфигурация
-
-```env
-BITRIX_WEBHOOK_URL=https://bitrix.example.kz/rest/USER_ID/SECRET/
-BROWSER_BASE_URL=https://bitrix.example.kz
-BROWSER_LOGIN_PATH=/auth/
-BROWSER_LOGIN=ai-admin
-BROWSER_PASSWORD=change-me
-BROWSER_HEADLESS=true
-BROWSER_TIMEOUT_MS=45000
-BROWSER_IGNORE_HTTPS_ERRORS=false
-```
-
-Webhook должен иметь read-доступ минимум к пользователям, структуре компании и задачам.
-
-Не коммитьте `.env`, webhook URL, пароли, токены и browser storage state.
-
 ## Dashboard
-
-Аудит внедрения:
 
 ```text
 http://SERVER_IP:8090/dashboard
-```
-
-Operational Intelligence:
-
-```text
 http://SERVER_IP:8090/operations
 ```
 
-## Operational Intelligence API
-
-Собрать свежий snapshot:
+## Unified Knowledge Graph API
 
 ```bash
-curl -sS -X POST \
-  http://127.0.0.1:8090/operations/collect \
-  | jq
-```
-
-Получить последний snapshot:
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/operations/latest \
-  | jq
+curl -sS http://127.0.0.1:8090/knowledge-graph/latest | jq
 ```
 
 Краткая сводка:
 
 ```bash
-curl -sS \
-  http://127.0.0.1:8090/operations/latest \
-  | jq '.summary'
+curl -sS http://127.0.0.1:8090/knowledge-graph/latest | jq '.summary'
 ```
 
-Сотрудники с высоким риском:
+Артефакт сохраняется в:
+
+```text
+/app/artifacts/knowledge-graph/latest.json
+```
+
+## AI API
+
+Статус провайдера:
 
 ```bash
-curl -sS \
-  http://127.0.0.1:8090/operations/latest \
-  | jq '.employees[] | select(.risk == "critical" or .risk == "high")'
+curl -sS http://127.0.0.1:8090/ai/status | jq
 ```
 
-## Crawler
+Получить управленческую рекомендацию:
 
 ```bash
 curl -sS -X POST \
-  http://127.0.0.1:8090/crawl \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "start_path": "/",
-    "max_pages": 150,
-    "max_depth": 3,
-    "include_query": false,
-    "save_html": false,
-    "delay_ms": 300
-  }' \
-  -o /tmp/crawl.json
+  'http://127.0.0.1:8090/ai/advice?question=Сформируй%20приоритетный%20план%20улучшения%20внедрения%20Bitrix24' \
+  | jq
 ```
+
+AI получает компактный контекст: сводку knowledge graph, фактические рекомендации, operational summary, implementation assessment и deep audit summary.
 
 ## Основные API
 
@@ -164,44 +135,28 @@ GET  /dashboard
 GET  /operations
 POST /operations/collect
 GET  /operations/latest
+GET  /knowledge-graph/latest
+GET  /ai/status
+POST /ai/advice
 ```
 
-## Артефакты
+## Ограничения alpha.1
 
-```text
-/app/artifacts/history/crawl-*.json
-/app/artifacts/operations/operations-*.json
-/app/artifacts/operations/latest.json
-/app/artifacts/latest-crawl.json
-```
+- knowledge graph пока объединяет последние доступные snapshots;
+- задачи представлены агрегатами сотрудников, без отдельных task nodes;
+- AI Coach не заменяет подтверждение владельцами процессов;
+- перед отправкой чувствительных данных во внешний AI необходимо утвердить корпоративную политику;
+- Groq API key хранится только в `.env` на сервере;
+- история трендов, Process Mining и Executive Dashboard будут добавлены следующими alpha/beta-патчами.
 
-При стандартном compose volume данные находятся на host в:
+## Roadmap 1.0.0
 
-```text
-/opt/ai-bit/reports/ui/
-```
-
-## Ограничения 0.9.0
-
-- аналитика зависит от прав webhook;
-- текущая версия анализирует задачи, доступные webhook-пользователю;
-- сложность и бизнес-ценность задач пока не оцениваются;
-- показатели сотрудника нельзя использовать как самостоятельную кадровую оценку;
-- динамика между operational snapshots будет визуализирована в `1.0.0`;
-- CRM-воронки, роботы и триггеры требуют отдельного расширения REST collector.
-
-## Roadmap 1.0.0 — AI Management Advisor
-
-- единый Browser + REST knowledge graph;
-- Executive Dashboard;
-- динамика 7/30/90 дней;
-- process mining;
-- анализ CRM-воронок, стадий, роботов и триггеров;
-- выявление повторяющихся ручных операций;
-- оценка потенциального эффекта автоматизации;
-- AI Coach: проблема → причина → решение → риск → эффект;
-- управленческий PDF/Excel отчёт;
-- план цифровой трансформации.
+- `alpha.1` — Unified Knowledge Graph и AI Provider Layer;
+- `alpha.2` — динамика 7/30/90 дней;
+- `alpha.3` — Process Mining MVP;
+- `beta.1` — единый Executive Dashboard;
+- `beta.2` — AI Coach, ROI и приоритизация;
+- `1.0.0` — стабилизация, отчёт и документация.
 
 ## Правило разработки
 
