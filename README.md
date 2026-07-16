@@ -28,12 +28,15 @@ AI-BIT объединяет семь контуров:
 - единый API для последующего Executive Dashboard и Process Mining;
 - AI status endpoint;
 - AI Coach MVP через Groq API;
+- официальный Python SDK `groq` для запросов к GroqCloud;
 - передача в AI только агрегированного контекста и evidence;
 - защита от выдуманных данных через системное требование работать только по фактам.
 
 ## Почему Groq
 
 Groq используется как основной inference-провайдер из-за высокой скорости ответа и OpenAI-совместимого API. Архитектура не привязана к одному поставщику: провайдер и модель задаются переменными окружения.
+
+Интеграция использует официальный Python SDK `groq`. Прямые запросы через стандартный `urllib` не используются, так как защитный контур API может блокировать такие клиенты кодом Cloudflare `1010`.
 
 ## Конфигурация
 
@@ -120,6 +123,22 @@ curl -sS -X POST \
 ```
 
 AI получает компактный контекст: сводку knowledge graph, фактические рекомендации, operational summary, implementation assessment и deep audit summary.
+
+### Диагностика Groq
+
+Проверить, что ключ попал внутрь контейнера:
+
+```bash
+docker compose exec browser-worker sh -lc 'test -n "$GROQ_API_KEY" && echo GROQ_API_KEY=SET || echo GROQ_API_KEY=EMPTY'
+```
+
+Проверить установленный SDK:
+
+```bash
+docker compose exec browser-worker python -c 'import groq; print(groq.__version__)'
+```
+
+Если после перехода на официальный SDK остаётся HTTP 403, проверить доступ сервера к GroqCloud с другого внешнего IP: блокировка может быть связана с политикой аккаунта, региона или исходного адреса.
 
 ## Основные API
 
