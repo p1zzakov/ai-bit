@@ -17,11 +17,11 @@ def main() -> None:
     text = replace_once(
         text,
         "from ai_provider import ai_status, generate_advice",
-        "from ai_provider import ai_status, generate_advice\nfrom admin_dashboard import admin_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
+        "from ai_provider import ai_status, generate_advice\nfrom fastapi.responses import FileResponse\nfrom admin_dashboard import admin_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom report_engine import generate_report, list_reports, report_file\nfrom reports_dashboard import reports_dashboard_html\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
         "rc imports",
     )
-    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.4"')
-    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.4"')
+    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.5"')
+    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.5"')
 
     root_marker = '''@app.get("/", response_class=HTMLResponse)
 async def executive_root() -> str:
@@ -75,6 +75,36 @@ async def business_architecture_latest() -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="No business architecture audit is available") from None
 
 
+@app.get("/reports-ui", response_class=HTMLResponse)
+async def reports_ui() -> str:
+    return reports_dashboard_html()
+
+
+@app.get("/reports")
+async def reports_list(limit: int = Query(default=50, ge=1, le=500)) -> list[dict[str, Any]]:
+    return list_reports(settings.browser_artifacts_dir, limit=limit)
+
+
+@app.post("/reports/generate")
+async def reports_generate() -> dict[str, Any]:
+    try:
+        return await generate_report(settings.browser_artifacts_dir)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Report generation failed: {exc}") from exc
+
+
+@app.get("/reports/{report_id}/{fmt}")
+async def reports_download(report_id: str, fmt: str):
+    try:
+        path = report_file(settings.browser_artifacts_dir, report_id, fmt)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Report not found") from None
+    media = {"json": "application/json", "html": "text/html; charset=utf-8", "pdf": "application/pdf"}[fmt]
+    return FileResponse(path, media_type=media, filename=path.name)
+
+
 @app.get("/system", response_class=HTMLResponse)
 async def system_dashboard() -> str:
     return system_dashboard_html()
@@ -88,7 +118,7 @@ async def system_health() -> dict[str, Any]:
         settings.browser_base_url,
     )
 '''
-    text = replace_once(text, marker, addition, "business architecture and system endpoints")
+    text = replace_once(text, marker, addition, "business architecture reports and system endpoints")
 
     graph_line = '    graph = build_unified_graph(crawl, operations)\n    compact_context = {'
     graph_replacement = '''    graph = build_unified_graph(crawl, operations)
@@ -127,7 +157,7 @@ async def system_health() -> dict[str, Any]:
     text = replace_once(text, context_marker, context_addition, "AI business architecture context")
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT Enterprise UI Refresh patch 1.0.0-rc.4")
+    print("Applied AI-BIT Reports & Export patch 1.0.0-rc.5")
 
 
 if __name__ == "__main__":
