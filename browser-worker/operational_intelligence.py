@@ -11,7 +11,6 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-
 ACTIVE_TASK_STATUSES = {"1", "2", "3", "4", "6"}
 COMPLETED_TASK_STATUSES = {"5"}
 
@@ -31,6 +30,14 @@ def _parse_dt(value: Any) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=UTC)
     return parsed.astimezone(UTC)
+
+
+def _is_active(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    return str(value if value is not None else "Y").strip().upper() in {"Y", "YES", "TRUE", "1", "ACTIVE"}
 
 
 def _rest_call_sync(webhook: str, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -97,25 +104,14 @@ def _task_metrics(task: dict[str, Any], now: datetime) -> dict[str, Any]:
     no_deadline = bool(active and deadline is None)
     age_days = max(0, (now - created).days) if created else None
     duration_days = max(0, (closed - created).total_seconds() / 86400) if completed and created and closed else None
-    return {
-        "active": active,
-        "completed": completed,
-        "overdue": overdue,
-        "no_deadline": no_deadline,
-        "age_days": age_days,
-        "duration_days": duration_days,
-    }
+    return {"active": active, "completed": completed, "overdue": overdue, "no_deadline": no_deadline, "age_days": age_days, "duration_days": duration_days}
 
 
 def analyze_operational(users: list[dict[str, Any]], departments: list[dict[str, Any]], tasks: list[dict[str, Any]]) -> dict[str, Any]:
     now = _now()
     user_map = {str(u.get("ID")): u for u in users if u.get("ID") is not None}
     department_map = {str(d.get("ID")): d for d in departments if d.get("ID") is not None}
-    task_rows: dict[str, dict[str, Any]] = defaultdict(lambda: {
-        "open": 0, "overdue": 0, "without_deadline": 0, "completed": 0,
-        "completion_days": [], "age_days": [], "created": 0,
-    })
-
+    task_rows: dict[str, dict[str, Any]] = defaultdict(lambda: {"open": 0, "overdue": 0, "without_deadline": 0, "completed": 0, "completion_days": [], "age_days": [], "created": 0})
     totals = {"open": 0, "overdue": 0, "without_deadline": 0, "completed": 0}
     for task in tasks:
         responsible = str(task.get("responsibleId") or task.get("RESPONSIBLE_ID") or "0")
@@ -143,45 +139,18 @@ def analyze_operational(users: list[dict[str, Any]], departments: list[dict[str,
         avg_age = round(sum(row["age_days"]) / len(row["age_days"]), 1) if row["age_days"] else None
         risk_points = min(100, overdue_rate + min(35, row["without_deadline"] * 2) + (20 if open_count > 50 else 10 if open_count > 30 else 0))
         dept_ids = _department_ids(user)
-        employees.append({
-            "id": uid,
-            "name": _user_name(user),
-            "email": user.get("EMAIL"),
-            "active": str(user.get("ACTIVE", "Y")) == "Y",
-            "department_ids": dept_ids,
-            "departments": [str(department_map.get(d, {}).get("NAME") or d) for d in dept_ids],
-            "open_tasks": open_count,
-            "overdue_tasks": row["overdue"],
-            "without_deadline": row["without_deadline"],
-            "completed_tasks": row["completed"],
-            "created_tasks": row["created"],
-            "overdue_rate": overdue_rate,
-            "avg_completion_days": avg_completion,
-            "avg_open_age_days": avg_age,
-            "risk_score": risk_points,
-            "risk": "critical" if risk_points >= 70 else "high" if risk_points >= 45 else "medium" if risk_points >= 20 else "low",
-        })
+        employees.append({"id": uid, "name": _user_name(user), "email": user.get("EMAIL"), "active": _is_active(user.get("ACTIVE")), "department_ids": dept_ids, "departments": [str(department_map.get(d, {}).get("NAME") or d) for d in dept_ids], "open_tasks": open_count, "overdue_tasks": row["overdue"], "without_deadline": row["without_deadline"], "completed_tasks": row["completed"], "created_tasks": row["created"], "overdue_rate": overdue_rate, "avg_completion_days": avg_completion, "avg_open_age_days": avg_age, "risk_score": risk_points, "risk": "critical" if risk_points >= 70 else "high" if risk_points >= 45 else "medium" if risk_points >= 20 else "low"})
 
     department_rows: dict[str, dict[str, Any]] = defaultdict(lambda: {"employees": 0, "open": 0, "overdue": 0, "without_deadline": 0, "completed": 0})
     for employee in employees:
         for dept_id in employee["department_ids"] or ["unassigned"]:
             row = department_rows[dept_id]
-            row["employees"] += 1
-            row["open"] += employee["open_tasks"]
-            row["overdue"] += employee["overdue_tasks"]
-            row["without_deadline"] += employee["without_deadline"]
-            row["completed"] += employee["completed_tasks"]
+            row["employees"] += 1; row["open"] += employee["open_tasks"]; row["overdue"] += employee["overdue_tasks"]; row["without_deadline"] += employee["without_deadline"]; row["completed"] += employee["completed_tasks"]
 
     department_analytics = []
     for dept_id, row in department_rows.items():
         rate = round(row["overdue"] * 100 / row["open"]) if row["open"] else 0
-        department_analytics.append({
-            "id": dept_id,
-            "name": str(department_map.get(dept_id, {}).get("NAME") or "Без подразделения"),
-            **row,
-            "overdue_rate": rate,
-            "risk": "critical" if rate >= 50 else "high" if rate >= 30 else "medium" if rate >= 15 else "low",
-        })
+        department_analytics.append({"id": dept_id, "name": str(department_map.get(dept_id, {}).get("NAME") or "Без подразделения"), **row, "overdue_rate": rate, "risk": "critical" if rate >= 50 else "high" if rate >= 30 else "medium" if rate >= 15 else "low"})
 
     employees.sort(key=lambda x: (x["risk_score"], x["overdue_tasks"], x["open_tasks"]), reverse=True)
     department_analytics.sort(key=lambda x: (x["overdue_rate"], x["overdue"]), reverse=True)
@@ -196,37 +165,14 @@ def analyze_operational(users: list[dict[str, Any]], departments: list[dict[str,
     if overloaded:
         recommendations.append({"severity": "high", "title": "Риск перегрузки сотрудников", "finding": f"У {len(overloaded)} сотрудников более 40 открытых задач.", "action": "Перераспределить очередь, выделить сервисные потоки и ограничить незавершённую работу."})
 
-    return {
-        "version": "0.9.0",
-        "generated_at": now.isoformat(),
-        "summary": {
-            "users": len(users),
-            "active_users": sum(1 for x in employees if x["active"]),
-            "departments": len(departments),
-            "tasks_loaded": len(tasks),
-            **totals,
-            "overdue_rate": round(totals["overdue"] * 100 / totals["open"]) if totals["open"] else 0,
-            "employees_at_risk": sum(1 for x in employees if x["risk"] in {"critical", "high"}),
-        },
-        "employees": employees,
-        "departments": department_analytics,
-        "recommendations": recommendations,
-        "methodology": "Индикаторы показывают дисциплину исполнения и нагрузку, но не являются оценкой ценности или качества работы сотрудника.",
-    }
+    return {"version": "1.0.0-beta.1", "generated_at": now.isoformat(), "summary": {"users": len(users), "active_users": sum(1 for x in employees if x["active"]), "departments": len(departments), "tasks_loaded": len(tasks), **totals, "overdue_rate": round(totals["overdue"] * 100 / totals["open"]) if totals["open"] else 0, "employees_at_risk": sum(1 for x in employees if x["risk"] in {"critical", "high"})}, "employees": employees, "departments": department_analytics, "recommendations": recommendations, "methodology": "Индикаторы показывают дисциплину исполнения и нагрузку, но не являются оценкой ценности или качества работы сотрудника."}
 
 
 async def collect_operational_snapshot(artifacts_dir: Path) -> dict[str, Any]:
     webhook = os.getenv("BITRIX_WEBHOOK_URL", "").strip()
     if not webhook:
         raise RuntimeError("BITRIX_WEBHOOK_URL is not configured")
-    users, departments, tasks = await asyncio.gather(
-        fetch_all(webhook, "user.get", {"filter[ACTIVE]": "Y"}, limit=5000),
-        fetch_all(webhook, "department.get", {}, limit=5000),
-        fetch_all(webhook, "tasks.task.list", {
-            "select[]": ["ID", "TITLE", "STATUS", "RESPONSIBLE_ID", "CREATED_BY", "CREATED_DATE", "DEADLINE", "CLOSED_DATE"],
-            "order[ID]": "asc",
-        }, limit=20000),
-    )
+    users, departments, tasks = await asyncio.gather(fetch_all(webhook, "user.get", {"filter[ACTIVE]": "Y"}, limit=5000), fetch_all(webhook, "department.get", {}, limit=5000), fetch_all(webhook, "tasks.task.list", {"select[]": ["ID", "TITLE", "STATUS", "RESPONSIBLE_ID", "CREATED_BY", "CREATED_DATE", "DEADLINE", "CLOSED_DATE"], "order[ID]": "asc"}, limit=20000))
     result = analyze_operational(users, departments, tasks)
     root = artifacts_dir / "operations"
     root.mkdir(parents=True, exist_ok=True)
