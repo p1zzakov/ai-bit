@@ -17,25 +17,27 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.4`.
+Browser Worker: `1.0.0-rc.5`.
 
-## Что добавлено в rc.4
+## Что добавлено в rc.5
 
-### Enterprise UI Refresh
+### Reports & Export
 
-- полностью переработана Unified Enterprise Admin;
-- добавлена постоянная боковая навигация;
-- единая верхняя панель с названием текущего раздела;
-- новый визуальный язык: градиенты, стеклянные поверхности, аккуратные тени и статусы;
-- адаптивное отображение для широких экранов, планшетов и мобильных устройств;
-- индикатор состояния системы в боковой панели;
-- автоматическая проверка `/system/health` раз в минуту;
-- кнопка обновления текущего раздела;
-- кнопка открытия активного модуля в отдельной вкладке;
-- экран загрузки при первом открытии и обновлении модуля;
-- прямые hash-ссылки на каждый раздел сохранены.
+- единый управленческий отчёт по всем аналитическим контурам;
+- Executive Summary;
+- Enterprise Health и зрелость внедрения;
+- операционные показатели, просрочка и сотрудники в зоне риска;
+- Process Mining и кандидаты на автоматизацию;
+- аудит бизнес-процессов, CRM-воронок и документооборота;
+- ключевые рекомендации;
+- план действий на 30 / 60 / 90 дней;
+- экспорт в `HTML`, `JSON` и `PDF`;
+- архив сформированных отчётов;
+- вкладка **Отчёты** в Unified Enterprise Admin.
 
-Главная консоль:
+PDF формируется локально внутри контейнера через Chromium/Playwright. Внешние сервисы для конвертации не используются.
+
+## Unified Enterprise Admin
 
 ```text
 http://SERVER_IP:8090/
@@ -50,68 +52,23 @@ http://SERVER_IP:8090/admin
 #operations
 #processes
 #architecture
+#reports
 #system
 ```
 
-## System Health & Data Quality
+## Основные модули
 
-- диагностика доступности Bitrix24;
-- проверка REST webhook через `user.current`;
-- проверка конфигурации Groq AI;
-- контроль свежести crawl, operational snapshot, Process Mining и Business Architecture Audit;
-- статусы `ok`, `warning`, `stale`, `missing`, `error`;
-- отображение недоступных REST-источников и ошибок прав;
-- рекомендации по обновлению устаревших контуров.
-
-## Business Architecture Audit
-
-### Business Process Audit
-
-- шаблоны и активность бизнес-процессов;
-- владельцы и описание назначения;
-- активные, завершённые и проблемные экземпляры при наличии REST evidence;
-- оценки `readiness`, `architecture`, `efficiency`, `automation`;
-- рекомендации по SLA, владельцам, ошибкам и зависшим экземплярам.
-
-### CRM Funnel Audit
-
-- CRM-воронки и стадии;
-- распределение сделок по стадиям;
-- неиспользуемые стадии;
-- сделки без ответственного, источника, суммы и следующей активности;
-- оценки `readiness`, `architecture`, `data_quality`, `efficiency`, `automation`.
-
-### Document Flow Audit
-
-- документные бизнес-процессы;
-- задачи по договорам, счетам, актам, заявкам и согласованиям;
-- просрочка и задачи без срока;
-- повторяющиеся документные операции;
-- Browser evidence по страницам и формам;
-- оценки `readiness`, `architecture`, `efficiency`, `automation`, `governance`.
-
-## Архитектура
-
-```text
-AI-BIT Enterprise
-├── Core
-│   ├── Browser Worker
-│   ├── REST Collector
-│   ├── Portal Crawler
-│   ├── Unified Knowledge Graph
-│   └── AI Provider Layer / Groq
-├── Enterprise Modules
-│   ├── Implementation Audit
-│   ├── Operational Intelligence
-│   ├── Operational Trends
-│   ├── Process Mining
-│   ├── Business Process Audit
-│   ├── CRM Funnel Audit
-│   ├── Document Flow Audit
-│   └── System Health & Data Quality
-└── Interface
-    └── Unified Enterprise Admin
-```
+- Implementation Audit;
+- Deep Audit;
+- Operational Intelligence;
+- Operational Trends 7/30/90;
+- Process Mining;
+- Business Process Audit;
+- CRM Funnel Audit;
+- Document Flow Audit;
+- System Health & Data Quality;
+- Groq AI Coach;
+- Reports & Export.
 
 ## Конфигурация
 
@@ -151,7 +108,7 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-rc.4"
+  "version": "1.0.0-rc.5"
 }
 ```
 
@@ -165,27 +122,66 @@ http://SERVER_IP:8090/dashboard              Аудит внедрения
 http://SERVER_IP:8090/operations             Operational Intelligence
 http://SERVER_IP:8090/processes              Process Mining
 http://SERVER_IP:8090/business-architecture  Business Architecture Audit
+http://SERVER_IP:8090/reports-ui             Reports & Export
 http://SERVER_IP:8090/system                 System Health & Data Quality
+```
+
+## Reports & Export API
+
+Сформировать новый отчёт:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
+```
+
+Список отчётов:
+
+```bash
+curl -sS http://127.0.0.1:8090/reports | jq
+```
+
+Скачать конкретный отчёт:
+
+```text
+GET /reports/{REPORT_ID}/html
+GET /reports/{REPORT_ID}/json
+GET /reports/{REPORT_ID}/pdf
+```
+
+Пример:
+
+```bash
+REPORT_ID=$(curl -sS http://127.0.0.1:8090/reports | jq -r '.[0].id')
+curl -fSLo /tmp/ai-bit-report.pdf \
+  "http://127.0.0.1:8090/reports/${REPORT_ID}/pdf"
+```
+
+Артефакты сохраняются в:
+
+```text
+/app/artifacts/reports/
+```
+
+При стандартном volume mapping на сервере:
+
+```text
+/opt/ai-bit/reports/ui/reports/
+```
+
+## Подготовка актуального отчёта
+
+Перед генерацией рекомендуется обновить данные:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8090/operations/collect -o /tmp/operations.json
+curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect -o /tmp/business-architecture.json
+curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
 ```
 
 ## System Health API
 
 ```bash
 curl -sS http://127.0.0.1:8090/system/health | jq
-```
-
-Краткая сводка:
-
-```bash
-curl -sS http://127.0.0.1:8090/system/health \
-  | jq '{overall_status,summary,data_quality}'
-```
-
-## Сбор данных
-
-```bash
-curl -sS -X POST http://127.0.0.1:8090/operations/collect -o /tmp/operations.json
-curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect -o /tmp/business-architecture.json
 ```
 
 ## Groq AI Coach
@@ -211,6 +207,10 @@ GET  /dashboard
 GET  /operations
 GET  /processes
 GET  /business-architecture
+GET  /reports-ui
+GET  /reports
+POST /reports/generate
+GET  /reports/{report_id}/{format}
 GET  /system
 GET  /system/health
 POST /operations/collect
@@ -224,13 +224,13 @@ GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения rc.4
+## Ограничения rc.5
 
+- отчёт использует последние сохранённые данные и не запускает все сборы автоматически;
+- качество отчёта зависит от свежести crawl, operational snapshot и Business Architecture Audit;
+- план 30/60/90 строится по приоритетам рекомендаций и требует подтверждения владельцами процессов;
+- PDF генерируется Chromium и может занимать несколько секунд;
 - внутренние панели пока загружаются в iframe внутри единой оболочки;
-- визуальный стиль вложенных модулей частично сохраняет предыдущую тему;
-- проверка Groq подтверждает конфигурацию ключа, но не расходует токены на тестовый completion;
-- часть методов бизнес-процессов зависит от редакции Bitrix24 и прав webhook;
-- свежесть отражает время последнего snapshot, а не полноту данных внутри него;
 - AI не заменяет подтверждение владельцем процесса.
 
 ## Roadmap
