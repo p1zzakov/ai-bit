@@ -2,17 +2,95 @@ from __future__ import annotations
 
 
 def admin_dashboard_html() -> str:
-    return r'''<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI-BIT Enterprise Admin</title><style>
-:root{color-scheme:dark;--bg:#07101d;--panel:#101b2d;--line:#283956;--text:#eef5ff;--muted:#91a3bd;--accent:#62a0ff}*{box-sizing:border-box}body{margin:0;font:14px/1.5 Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}header{height:72px;padding:14px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:#07101df5}.brand h1{margin:0;font-size:20px}.brand div{color:var(--muted);font-size:12px}.tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tab{background:#172640;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 12px;cursor:pointer}.tab.active{border-color:var(--accent);background:#20365a}.status{color:var(--muted);font-size:12px;margin-left:10px}.framewrap{height:calc(100vh - 72px);position:relative}.frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg)}.frame.active{display:block}@media(max-width:1250px){header{height:auto;align-items:flex-start;gap:10px;flex-direction:column}.framewrap{height:calc(100vh - 132px)}.status{margin-left:0}}
-</style></head><body><header><div class="brand"><h1>AI-BIT Enterprise Admin</h1><div>1.0.0-rc.3 · единая консоль аудита, аналитики, AI и диагностики</div></div><div><div class="tabs" id="tabs"><button class="tab active" data-key="executive">Executive</button><button class="tab" data-key="implementation">Внедрение</button><button class="tab" data-key="operations">Операции</button><button class="tab" data-key="processes">Process Mining</button><button class="tab" data-key="architecture">Бизнес-архитектура</button><button class="tab" data-key="system">Система</button></div><div class="status" id="status">Раздел: Executive</div></div></header><main class="framewrap" id="frames">
-<iframe class="frame active" data-key="executive" data-src="/executive"></iframe>
-<iframe class="frame" data-key="implementation" data-src="/dashboard"></iframe>
-<iframe class="frame" data-key="operations" data-src="/operations"></iframe>
-<iframe class="frame" data-key="processes" data-src="/processes"></iframe>
-<iframe class="frame" data-key="architecture" data-src="/business-architecture"></iframe>
-<iframe class="frame" data-key="system" data-src="/system"></iframe>
-</main><script>
-const names={executive:'Executive',implementation:'Аудит внедрения',operations:'Operational Intelligence',processes:'Process Mining',architecture:'Business Architecture',system:'System Health'};
-function activate(key){document.querySelectorAll('.tab,.frame').forEach(x=>x.classList.remove('active'));const tab=document.querySelector(`.tab[data-key="${key}"]`);const frame=document.querySelector(`.frame[data-key="${key}"]`);if(!tab||!frame)return;tab.classList.add('active');frame.classList.add('active');if(!frame.src)frame.src=frame.dataset.src;history.replaceState(null,'','#'+key);document.querySelector('#status').textContent='Раздел: '+names[key]}
-document.querySelector('#tabs').addEventListener('click',e=>{if(e.target.dataset.key)activate(e.target.dataset.key)});activate(location.hash.slice(1)||'executive');window.addEventListener('hashchange',()=>activate(location.hash.slice(1)||'executive'));
-</script></body></html>'''
+    return r'''<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI-BIT Enterprise</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#060a12;--bg2:#0a101c;--sidebar:#0b1220ee;--surface:#101a2b;
+  --surface2:#131f33;--line:#22314a;--text:#f4f7fb;--muted:#8e9db5;
+  --accent:#6d8cff;--accent2:#8b5cf6;--cyan:#38bdf8;--ok:#35d08a;
+  --warn:#fbbf24;--bad:#fb7185;--shadow:0 22px 60px rgba(0,0,0,.32)
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 Inter,Segoe UI,Arial,sans-serif;color:var(--text);background:
+ radial-gradient(circle at 75% 10%,rgba(109,140,255,.12),transparent 28%),
+ radial-gradient(circle at 15% 85%,rgba(139,92,246,.10),transparent 30%),var(--bg);overflow:hidden}
+button{font:inherit}
+.shell{height:100%;display:grid;grid-template-columns:270px minmax(0,1fr)}
+.sidebar{position:relative;padding:22px 16px;border-right:1px solid rgba(255,255,255,.07);background:linear-gradient(180deg,var(--sidebar),rgba(7,12,22,.96));backdrop-filter:blur(18px);display:flex;flex-direction:column;z-index:4}
+.brand{display:flex;gap:12px;align-items:center;padding:4px 8px 24px}
+.logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:900;font-size:17px;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 12px 30px rgba(109,140,255,.28)}
+.brand h1{font-size:16px;margin:0;letter-spacing:.2px}.brand p{margin:2px 0 0;color:var(--muted);font-size:11px}
+.section-label{padding:10px 12px 7px;color:#64748b;font-size:10px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
+.nav{display:flex;flex-direction:column;gap:5px}.nav button{width:100%;border:1px solid transparent;background:transparent;color:#aab7ca;padding:11px 12px;border-radius:11px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:11px;transition:.18s ease}
+.nav button:hover{color:#fff;background:rgba(255,255,255,.045);transform:translateX(2px)}
+.nav button.active{color:#fff;background:linear-gradient(90deg,rgba(109,140,255,.22),rgba(109,140,255,.07));border-color:rgba(109,140,255,.26);box-shadow:inset 3px 0 0 var(--accent)}
+.icon{width:27px;height:27px;border-radius:8px;display:grid;place-items:center;background:rgba(255,255,255,.055);font-size:13px;font-weight:800}.nav button.active .icon{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+.sidebar-bottom{margin-top:auto;padding:14px 8px 0}.health{padding:13px;border:1px solid var(--line);border-radius:13px;background:rgba(16,26,43,.72)}
+.health-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);box-shadow:0 0 0 4px rgba(142,157,181,.1)}.dot.ok{background:var(--ok);box-shadow:0 0 0 4px rgba(53,208,138,.12)}.dot.warning{background:var(--warn)}.dot.error{background:var(--bad)}
+.health small{display:block;color:var(--muted);margin-top:7px}.version{margin-top:10px;color:#60708a;font-size:11px;text-align:center}
+.workspace{min-width:0;display:grid;grid-template-rows:76px minmax(0,1fr)}
+.topbar{padding:0 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(6,10,18,.63);backdrop-filter:blur(16px)}
+.page-title h2{margin:0;font-size:19px}.page-title p{margin:3px 0 0;color:var(--muted);font-size:12px}.actions{display:flex;align-items:center;gap:9px}.action{border:1px solid var(--line);background:var(--surface);color:#cdd7e6;padding:9px 12px;border-radius:10px;cursor:pointer}.action:hover{border-color:#40567b;color:#fff}.action.primary{background:linear-gradient(135deg,#496ee8,#7657de);border-color:transparent;color:#fff;box-shadow:0 9px 25px rgba(87,104,220,.22)}
+.content{padding:18px 20px 20px;min-height:0}.viewport{height:100%;position:relative;border:1px solid rgba(255,255,255,.075);border-radius:18px;overflow:hidden;background:var(--bg2);box-shadow:var(--shadow)}
+.frame{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:var(--bg2)}.frame.active{display:block}
+.loader{position:absolute;inset:0;z-index:2;display:none;place-items:center;background:rgba(6,10,18,.74);backdrop-filter:blur(4px)}.loader.show{display:grid}.spinner{width:36px;height:36px;border:3px solid rgba(255,255,255,.12);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.mobile-menu{display:none}
+@media(max-width:950px){.shell{grid-template-columns:82px minmax(0,1fr)}.sidebar{padding:18px 10px}.brand{justify-content:center;padding-inline:0}.brand div:not(.logo),.section-label,.nav .label,.sidebar-bottom{display:none}.nav button{justify-content:center;padding:10px}.icon{width:34px;height:34px}.topbar{padding:0 15px}.content{padding:12px}.page-title p{display:none}}
+@media(max-width:620px){.shell{display:block}.sidebar{position:fixed;left:0;right:0;bottom:0;top:auto;height:68px;padding:8px;border-right:0;border-top:1px solid var(--line);z-index:10}.brand,.section-label,.sidebar-bottom{display:none}.nav{height:100%;flex-direction:row;justify-content:space-around}.nav button{width:auto;padding:7px}.nav .label{display:none}.icon{width:36px;height:36px}.workspace{height:calc(100% - 68px);grid-template-rows:66px minmax(0,1fr)}.topbar{padding:0 12px}.page-title h2{font-size:16px}.actions .action:not(.primary){display:none}.content{padding:8px}.viewport{border-radius:13px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">AI</div><div><h1>AI-BIT Enterprise</h1><p>Business Intelligence Platform</p></div></div>
+    <div class="section-label">Рабочее пространство</div>
+    <nav class="nav" id="nav">
+      <button class="active" data-key="executive"><span class="icon">E</span><span class="label">Executive</span></button>
+      <button data-key="implementation"><span class="icon">I</span><span class="label">Аудит внедрения</span></button>
+      <button data-key="operations"><span class="icon">O</span><span class="label">Операции</span></button>
+      <button data-key="processes"><span class="icon">P</span><span class="label">Process Mining</span></button>
+      <button data-key="architecture"><span class="icon">B</span><span class="label">Бизнес-архитектура</span></button>
+      <button data-key="system"><span class="icon">S</span><span class="label">Система</span></button>
+    </nav>
+    <div class="sidebar-bottom"><div class="health"><div class="health-row"><span>Состояние системы</span><span class="dot" id="healthDot"></span></div><small id="healthText">Проверяю источники…</small></div><div class="version">AI-BIT · 1.0.0-rc.4</div></div>
+  </aside>
+  <section class="workspace">
+    <header class="topbar">
+      <div class="page-title"><h2 id="title">Executive Dashboard</h2><p id="subtitle">Ключевые показатели, риски и рекомендации</p></div>
+      <div class="actions"><button class="action" id="openDirect">Открыть отдельно</button><button class="action primary" id="refresh">Обновить раздел</button></div>
+    </header>
+    <main class="content"><div class="viewport" id="viewport"><div class="loader" id="loader"><div class="spinner"></div></div>
+      <iframe class="frame active" data-key="executive" data-src="/executive"></iframe>
+      <iframe class="frame" data-key="implementation" data-src="/dashboard"></iframe>
+      <iframe class="frame" data-key="operations" data-src="/operations"></iframe>
+      <iframe class="frame" data-key="processes" data-src="/processes"></iframe>
+      <iframe class="frame" data-key="architecture" data-src="/business-architecture"></iframe>
+      <iframe class="frame" data-key="system" data-src="/system"></iframe>
+    </div></main>
+  </section>
+</div>
+<script>
+const meta={
+ executive:{title:'Executive Dashboard',subtitle:'Ключевые показатели, риски и рекомендации',url:'/executive'},
+ implementation:{title:'Аудит внедрения',subtitle:'Зрелость модулей, страницы и план развития',url:'/dashboard'},
+ operations:{title:'Operational Intelligence',subtitle:'Нагрузка, просрочка и аналитика подразделений',url:'/operations'},
+ processes:{title:'Process Mining',subtitle:'Повторяющиеся операции и кандидаты на автоматизацию',url:'/processes'},
+ architecture:{title:'Бизнес-архитектура',subtitle:'Процессы, CRM-воронки и документооборот',url:'/business-architecture'},
+ system:{title:'Система и качество данных',subtitle:'Источники, права, свежесть и диагностика',url:'/system'}
+};
+const $=s=>document.querySelector(s);let current='executive';
+function activate(key){if(!meta[key])key='executive';current=key;document.querySelectorAll('.nav button,.frame').forEach(x=>x.classList.remove('active'));const button=document.querySelector(`.nav button[data-key="${key}"]`);const frame=document.querySelector(`.frame[data-key="${key}"]`);button.classList.add('active');frame.classList.add('active');$('#title').textContent=meta[key].title;$('#subtitle').textContent=meta[key].subtitle;if(!frame.src){$('#loader').classList.add('show');frame.src=frame.dataset.src;frame.addEventListener('load',()=>$('#loader').classList.remove('show'),{once:true})}history.replaceState(null,'','#'+key)}
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('button[data-key]');if(b)activate(b.dataset.key)});
+$('#refresh').addEventListener('click',()=>{const f=document.querySelector(`.frame[data-key="${current}"]`);$('#loader').classList.add('show');f.addEventListener('load',()=>$('#loader').classList.remove('show'),{once:true});f.src=meta[current].url+'?_='+Date.now()});
+$('#openDirect').addEventListener('click',()=>window.open(meta[current].url,'_blank','noopener'));
+async function health(){try{const r=await fetch('/system/health?_='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error();const d=await r.json();const s=d.overall_status||'warning';$('#healthDot').className='dot '+(s==='ok'?'ok':s==='error'?'error':'warning');$('#healthText').textContent=s==='ok'?'Все ключевые источники доступны':s==='error'?'Есть критические ошибки':'Есть предупреждения по данным'}catch(e){$('#healthDot').className='dot error';$('#healthText').textContent='Диагностика недоступна'}}
+activate(location.hash.slice(1)||'executive');window.addEventListener('hashchange',()=>activate(location.hash.slice(1)||'executive'));health();setInterval(health,60000);
+</script>
+</body></html>'''
