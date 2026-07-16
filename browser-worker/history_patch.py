@@ -18,15 +18,15 @@ def main() -> None:
     text = replace_once(
         text,
         "from fastapi import FastAPI, HTTPException",
-        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation\nfrom operational_intelligence import collect_operational_snapshot, read_latest_operational\nfrom operations_dashboard import operations_dashboard_html",
+        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom ai_provider import ai_status, generate_advice\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation\nfrom operational_intelligence import collect_operational_snapshot, read_latest_operational\nfrom operations_dashboard import operations_dashboard_html\nfrom unified_graph import build_unified_graph, save_unified_graph",
         "history imports",
     )
 
     text = text.replace(
         'FastAPI(title="AI-BIT Browser Worker", version="0.5.0")',
-        'FastAPI(title="AI-BIT Browser Worker", version="0.9.0")',
+        'FastAPI(title="AI-BIT Browser Worker", version="1.0.0-alpha.1")',
     )
-    text = text.replace('"version": "0.5.0"', '"version": "0.9.0"')
+    text = text.replace('"version": "0.5.0"', '"version": "1.0.0-alpha.1"')
 
     settings_marker = "settings = Settings()\n"
     text = replace_once(
@@ -91,6 +91,56 @@ async def operations_latest() -> dict[str, Any]:
         return read_latest_operational(settings.browser_artifacts_dir)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="No operational snapshot is available") from None
+
+
+@app.get("/knowledge-graph/latest")
+async def knowledge_graph_latest() -> dict[str, Any]:
+    crawl = None
+    operations = None
+    try:
+        crawl = CRAWL_HISTORY.latest()
+    except FileNotFoundError:
+        pass
+    try:
+        operations = read_latest_operational(settings.browser_artifacts_dir)
+    except FileNotFoundError:
+        pass
+    if crawl is None and operations is None:
+        raise HTTPException(status_code=404, detail="No audit data is available")
+    graph = build_unified_graph(crawl, operations)
+    graph["artifact"] = str(save_unified_graph(settings.browser_artifacts_dir, graph))
+    return graph
+
+
+@app.get("/ai/status")
+async def get_ai_status() -> dict[str, Any]:
+    return ai_status()
+
+
+@app.post("/ai/advice")
+async def ai_advice(question: str = Query(default="Сформируй приоритетный план улучшения внедрения Bitrix24")) -> dict[str, Any]:
+    crawl = None
+    operations = None
+    try:
+        crawl = CRAWL_HISTORY.latest()
+    except FileNotFoundError:
+        pass
+    try:
+        operations = read_latest_operational(settings.browser_artifacts_dir)
+    except FileNotFoundError:
+        pass
+    graph = build_unified_graph(crawl, operations)
+    compact_context = {
+        "graph_summary": graph.get("summary"),
+        "recommendations": graph.get("recommendations", [])[:50],
+        "operations_summary": (operations or {}).get("summary", {}),
+        "implementation": (crawl or {}).get("assessment", {}),
+        "deep_audit_summary": (crawl or {}).get("deep_audit", {}).get("summary", {}),
+    }
+    try:
+        return generate_advice(compact_context, question)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @app.get("/crawl/history")
@@ -158,7 +208,7 @@ async def crawl_diff(before: str, after: str) -> dict[str, Any]:
     text = text.replace(marker, endpoints + marker, 1)
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT operational intelligence patch 0.9.0")
+    print("Applied AI-BIT unified intelligence patch 1.0.0-alpha.1")
 
 
 if __name__ == "__main__":
