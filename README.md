@@ -4,39 +4,38 @@ AI-BIT — read-only платформа технического, функцио
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-alpha.1`.
+Browser Worker: `1.0.0-alpha.2`.
 
 ## Архитектура
 
-AI-BIT объединяет семь контуров:
+AI-BIT объединяет восемь контуров:
 
 - **REST Collector** — пользователи, подразделения, задачи, CRM и другие сущности;
 - **Browser Worker** — UI-разделы и настройки, которых нет в REST;
 - **Portal Crawler** — карта внутренних страниц;
 - **Deep Audit** — рекомендации по модулям и страницам;
 - **Operational Intelligence** — нагрузка, просрочка и риски подразделений;
+- **Operational Trends** — динамика 7/30/90 дней;
 - **Unified Knowledge Graph** — связь пользователей, подразделений, модулей, страниц и рекомендаций;
 - **AI Provider Layer** — экспертные рекомендации через Groq с возможностью смены провайдера.
 
 Все операции против Bitrix24 выполняются в read-only режиме.
 
-## Возможности 1.0.0-alpha.1
+## Возможности 1.0.0-alpha.2
 
-- объединение последнего crawl и operational snapshot в единый knowledge graph;
-- узлы: модули, страницы, пользователи, подразделения, рекомендации;
-- связи: принадлежность страниц модулям и сотрудников подразделениям;
-- единый API для последующего Executive Dashboard и Process Mining;
-- AI status endpoint;
-- AI Coach MVP через Groq API;
-- официальный Python SDK `groq` для запросов к GroqCloud;
-- передача в AI только агрегированного контекста и evidence;
-- защита от выдуманных данных через системное требование работать только по фактам.
+- история operational snapshot;
+- сравнение текущего состояния с периодами 7, 30 и 90 дней;
+- динамика открытых и просроченных задач;
+- изменение доли просрочки;
+- динамика задач без срока;
+- изменение количества сотрудников в зоне риска;
+- сотрудники и подразделения с улучшением или ухудшением;
+- вход в зону риска и выход из неё;
+- визуализация трендов на `/operations`;
+- передача 30-дневного тренда в AI Coach;
+- сохранение Unified Knowledge Graph и Deep Audit из предыдущих версий.
 
-## Почему Groq
-
-Groq используется как основной inference-провайдер из-за высокой скорости ответа и OpenAI-совместимого API. Архитектура не привязана к одному поставщику: провайдер и модель задаются переменными окружения.
-
-Интеграция использует официальный Python SDK `groq`. Прямые запросы через стандартный `urllib` не используются, так как защитный контур API может блокировать такие клиенты кодом Cloudflare `1010`.
+Если snapshot требуемой давности отсутствует, система использует самый ранний доступный snapshot и возвращает фактический интервал сравнения.
 
 ## Конфигурация
 
@@ -77,7 +76,7 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-alpha.1"
+  "version": "1.0.0-alpha.2"
 }
 ```
 
@@ -88,13 +87,68 @@ http://SERVER_IP:8090/dashboard
 http://SERVER_IP:8090/operations
 ```
 
-## Unified Knowledge Graph API
+Во вкладке **Динамика** доступны переключатели 7, 30 и 90 дней.
+
+## Operational Intelligence API
+
+Собрать свежий snapshot:
 
 ```bash
-curl -sS http://127.0.0.1:8090/knowledge-graph/latest | jq
+curl -sS -X POST http://127.0.0.1:8090/operations/collect | jq '.summary'
 ```
 
-Краткая сводка:
+Последний snapshot:
+
+```bash
+curl -sS http://127.0.0.1:8090/operations/latest | jq '.summary'
+```
+
+История snapshot:
+
+```bash
+curl -sS 'http://127.0.0.1:8090/operations/history?limit=30' | jq
+```
+
+Тренд за 7 дней:
+
+```bash
+curl -sS 'http://127.0.0.1:8090/operations/trends?days=7' | jq
+```
+
+Тренд за 30 дней:
+
+```bash
+curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' | jq
+```
+
+Тренд за 90 дней:
+
+```bash
+curl -sS 'http://127.0.0.1:8090/operations/trends?days=90' | jq
+```
+
+Краткая сводка тренда:
+
+```bash
+curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' \
+  | jq '{status,direction,actual_comparison_days,deltas}'
+```
+
+Сотрудники с ухудшением:
+
+```bash
+curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' \
+  | jq '.employees.worsened'
+```
+
+Подразделения с улучшением:
+
+```bash
+curl -sS 'http://127.0.0.1:8090/operations/trends?days=30' \
+  | jq '.departments.improved'
+```
+
+## Unified Knowledge Graph API
 
 ```bash
 curl -sS http://127.0.0.1:8090/knowledge-graph/latest | jq '.summary'
@@ -114,31 +168,17 @@ curl -sS http://127.0.0.1:8090/knowledge-graph/latest | jq '.summary'
 curl -sS http://127.0.0.1:8090/ai/status | jq
 ```
 
-Получить управленческую рекомендацию:
+Получить управленческую рекомендацию с учётом 30-дневной динамики:
 
 ```bash
 curl -sS -X POST \
-  'http://127.0.0.1:8090/ai/advice?question=Сформируй%20приоритетный%20план%20улучшения%20внедрения%20Bitrix24' \
+  --get \
+  --data-urlencode 'question=Проанализируй динамику за 30 дней и предложи приоритетные действия' \
+  http://127.0.0.1:8090/ai/advice \
   | jq
 ```
 
-AI получает компактный контекст: сводку knowledge graph, фактические рекомендации, operational summary, implementation assessment и deep audit summary.
-
-### Диагностика Groq
-
-Проверить, что ключ попал внутрь контейнера:
-
-```bash
-docker compose exec browser-worker sh -lc 'test -n "$GROQ_API_KEY" && echo GROQ_API_KEY=SET || echo GROQ_API_KEY=EMPTY'
-```
-
-Проверить установленный SDK:
-
-```bash
-docker compose exec browser-worker python -c 'import groq; print(groq.__version__)'
-```
-
-Если после перехода на официальный SDK остаётся HTTP 403, проверить доступ сервера к GroqCloud с другого внешнего IP: блокировка может быть связана с политикой аккаунта, региона или исходного адреса.
+Интеграция использует официальный Python SDK `groq`. AI получает агрегированные показатели, тренды, рекомендации и audit evidence.
 
 ## Основные API
 
@@ -154,19 +194,21 @@ GET  /dashboard
 GET  /operations
 POST /operations/collect
 GET  /operations/latest
+GET  /operations/history
+GET  /operations/trends?days=7|30|90
 GET  /knowledge-graph/latest
 GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения alpha.1
+## Ограничения alpha.2
 
-- knowledge graph пока объединяет последние доступные snapshots;
-- задачи представлены агрегатами сотрудников, без отдельных task nodes;
-- AI Coach не заменяет подтверждение владельцами процессов;
-- перед отправкой чувствительных данных во внешний AI необходимо утвердить корпоративную политику;
-- Groq API key хранится только в `.env` на сервере;
-- история трендов, Process Mining и Executive Dashboard будут добавлены следующими alpha/beta-патчами.
+- тренды появляются после накопления минимум двух operational snapshot;
+- для полноценного сравнения 7/30/90 дней snapshot должны регулярно сохраняться;
+- если исторических данных мало, используется самый ранний доступный snapshot;
+- показатели сотрудников не являются самостоятельной кадровой оценкой;
+- задачи пока представлены агрегатами, без отдельных task nodes в knowledge graph;
+- AI Coach не заменяет подтверждение владельцами процессов.
 
 ## Roadmap 1.0.0
 
