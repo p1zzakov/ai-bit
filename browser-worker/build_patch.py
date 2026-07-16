@@ -19,7 +19,7 @@ def main() -> None:
     text = replace_once(
         text,
         'app = FastAPI(title="AI-BIT Browser Worker", version="0.2.0")',
-        'app = FastAPI(title="AI-BIT Browser Worker", version="0.3.0")',
+        'app = FastAPI(title="AI-BIT Browser Worker", version="0.3.1")',
         "application version",
     )
     text = replace_once(
@@ -28,9 +28,15 @@ def main() -> None:
         '    "contact_center": "/services/contact_center/",',
         "contact center preset",
     )
+    text = replace_once(
+        text,
+        '    body_text = (await page.locator("body").inner_text()).lower()',
+        '''    try:\n        body_text = str(\n            await page.evaluate(\n                "() => document.body?.innerText || document.documentElement?.innerText || ''"\n            )\n        ).lower()\n    except PlaywrightError:\n        body_text = ""''',
+        "non-blocking authentication text",
+    )
 
     marker = "\n\nasync def collect_page(\n"
-    helpers = '''\n\ndef classify_page_status(navigation: dict[str, Any], target_url: str, final_url: str) -> str:\n    http_status = navigation.get("http_status")\n    if http_status in (401, 403):\n        return "denied"\n    if http_status == 404:\n        return "not_found"\n    if navigation.get("status") == "error":\n        return "error"\n    if navigation.get("timed_out"):\n        return "partial"\n    if navigation.get("request_failures") or navigation.get("http_errors"):\n        return "partial"\n    if final_url.rstrip("/") != target_url.rstrip("/"):\n        return "redirected"\n    return "ok"\n\n\nasync def safe_title(page: Page) -> tuple[str, str | None]:\n    try:\n        return await page.title(), None\n    except PlaywrightError as exc:\n        return "", str(exc)\n\n\nasync def safe_inner_texts(page: Page, selector: str) -> tuple[list[str], str | None]:\n    try:\n        return await page.locator(selector).all_inner_texts(timeout=10000), None\n    except PlaywrightError as exc:\n        return [], str(exc)\n\n\nasync def safe_links(page: Page) -> tuple[list[dict[str, str]], str | None]:\n    try:\n        links = await page.locator("a[href]").evaluate_all(\n            "els => els.slice(0,500).map(a => ({text:(a.innerText||'').trim(), href:a.href})).filter(x => x.text || x.href)"\n        )\n        return links, None\n    except PlaywrightError as exc:\n        return [], str(exc)\n\n\nasync def safe_body_text(page: Page) -> tuple[str, str | None]:\n    try:\n        text = await page.locator("body").inner_text(timeout=10000)\n        return text, None\n    except PlaywrightError as exc:\n        try:\n            text = await page.locator("html").inner_text(timeout=5000)\n            return text, f"body unavailable: {exc}"\n        except PlaywrightError as fallback_exc:\n            return "", f"body unavailable: {exc}; html fallback failed: {fallback_exc}"\n'''
+    helpers = '''\n\ndef classify_page_status(navigation: dict[str, Any], target_url: str, final_url: str) -> str:\n    http_status = navigation.get("http_status")\n    if http_status in (401, 403):\n        return "denied"\n    if http_status == 404:\n        return "not_found"\n    if navigation.get("status") == "error":\n        return "error"\n    if navigation.get("timed_out"):\n        return "partial"\n    if navigation.get("request_failures") or navigation.get("http_errors"):\n        return "partial"\n    if final_url.rstrip("/") != target_url.rstrip("/"):\n        return "redirected"\n    return "ok"\n\n\nasync def safe_title(page: Page) -> tuple[str, str | None]:\n    try:\n        return await page.title(), None\n    except PlaywrightError as exc:\n        return "", str(exc)\n\n\nasync def safe_inner_texts(page: Page, selector: str) -> tuple[list[str], str | None]:\n    try:\n        values = await page.locator(selector).evaluate_all(\n            "els => els.slice(0,100).map(el => (el.innerText || '').trim())"\n        )\n        return [str(value) for value in values], None\n    except PlaywrightError as exc:\n        return [], str(exc)\n\n\nasync def safe_links(page: Page) -> tuple[list[dict[str, str]], str | None]:\n    try:\n        links = await page.locator("a[href]").evaluate_all(\n            "els => els.slice(0,500).map(a => ({text:(a.innerText||'').trim(), href:a.href})).filter(x => x.text || x.href)"\n        )\n        return links, None\n    except PlaywrightError as exc:\n        return [], str(exc)\n\n\nasync def safe_body_text(page: Page) -> tuple[str, str | None]:\n    try:\n        text = await page.evaluate(\n            "() => document.body?.innerText || document.documentElement?.innerText || ''"\n        )\n        return str(text), None\n    except PlaywrightError as exc:\n        return "", str(exc)\n'''
     if marker not in text:
         raise RuntimeError("collect_page marker not found")
     text = text.replace(marker, helpers + marker, 1)
@@ -48,12 +54,12 @@ def main() -> None:
     text = replace_once(
         text,
         '        "version": "0.2.0",',
-        '        "version": "0.3.0",',
+        '        "version": "0.3.1",',
         "health version",
     )
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT browser worker build patch 0.3.0")
+    print("Applied AI-BIT browser worker build patch 0.3.1")
 
 
 if __name__ == "__main__":
