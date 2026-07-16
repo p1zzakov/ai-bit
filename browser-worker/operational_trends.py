@@ -98,6 +98,32 @@ def _compare_entities(current: list[dict[str, Any]], baseline: list[dict[str, An
     }
 
 
+def _insufficient_result(*, days: int, snapshots: list[dict[str, Any]], current_meta: dict[str, Any], series: list[dict[str, Any]], message: str, baseline_meta: dict[str, Any] | None = None) -> dict[str, Any]:
+    current_dt = _parse_dt(current_meta.get("generated_at"))
+    baseline_dt = _parse_dt((baseline_meta or {}).get("generated_at"))
+    actual_days = (current_dt - baseline_dt).days if current_dt and baseline_dt else None
+    return {
+        "version": "1.0.0-beta.1",
+        "period_days": days,
+        "generated_at": datetime.now(UTC).isoformat(),
+        "status": "insufficient_history",
+        "direction": "unknown",
+        "available_snapshots": len(snapshots),
+        "actual_comparison_days": actual_days,
+        "current_snapshot": current_meta.get("id"),
+        "baseline_snapshot": (baseline_meta or {}).get("id"),
+        "current_generated_at": current_meta.get("generated_at"),
+        "baseline_generated_at": (baseline_meta or {}).get("generated_at"),
+        "current": current_meta.get("summary", {}),
+        "baseline": (baseline_meta or {}).get("summary") if baseline_meta else None,
+        "deltas": {},
+        "employees": {"improved": [], "worsened": [], "entered_risk": [], "exited_risk": []},
+        "departments": {"improved": [], "worsened": [], "entered_risk": [], "exited_risk": []},
+        "series": series,
+        "message": message,
+    }
+
+
 def build_operational_trends(artifacts_dir: Path, days: int = 30) -> dict[str, Any]:
     if days not in {7, 30, 90}:
         raise ValueError("days must be one of 7, 30 or 90")
@@ -133,28 +159,32 @@ def build_operational_trends(artifacts_dir: Path, days: int = 30) -> dict[str, A
     ]
 
     if baseline_meta is None:
-        return {
-            "version": "1.0.0-alpha.2",
-            "period_days": days,
-            "generated_at": datetime.now(UTC).isoformat(),
-            "status": "insufficient_history",
-            "available_snapshots": len(snapshots),
-            "current": current_meta["summary"],
-            "baseline": None,
-            "deltas": {},
-            "employees": {"improved": [], "worsened": [], "entered_risk": [], "exited_risk": []},
-            "departments": {"improved": [], "worsened": [], "entered_risk": [], "exited_risk": []},
-            "series": series,
-            "message": "Для расчёта динамики требуется минимум два operational snapshot.",
-        }
+        return _insufficient_result(
+            days=days,
+            snapshots=snapshots,
+            current_meta=current_meta,
+            series=series,
+            message="Для расчёта динамики требуется минимум два operational snapshot.",
+        )
+
+    baseline_dt = _parse_dt(baseline_meta["generated_at"])
+    actual_seconds = max(0, int((current_dt - baseline_dt).total_seconds())) if baseline_dt else 0
+    actual_days = actual_seconds // 86400
+    if actual_days < 1:
+        return _insufficient_result(
+            days=days,
+            snapshots=snapshots,
+            current_meta=current_meta,
+            baseline_meta=baseline_meta,
+            series=series,
+            message="Snapshot собраны в течение одного дня. Реальная динамика появится после следующего дневного среза.",
+        )
 
     baseline = baseline_meta["data"]
     current_summary = current.get("summary", {})
     baseline_summary = baseline.get("summary", {})
     fields = ["open", "overdue", "overdue_rate", "without_deadline", "completed", "employees_at_risk"]
     deltas = {field: _delta(current_summary.get(field), baseline_summary.get(field)) for field in fields}
-    baseline_dt = _parse_dt(baseline_meta["generated_at"])
-    actual_days = max(0, (current_dt - baseline_dt).days) if baseline_dt else None
 
     direction = "stable"
     if deltas["overdue_rate"] <= -5 and deltas["employees_at_risk"] <= 0:
@@ -163,7 +193,7 @@ def build_operational_trends(artifacts_dir: Path, days: int = 30) -> dict[str, A
         direction = "worsening"
 
     return {
-        "version": "1.0.0-alpha.2",
+        "version": "1.0.0-beta.1",
         "period_days": days,
         "actual_comparison_days": actual_days,
         "generated_at": datetime.now(UTC).isoformat(),
@@ -172,6 +202,8 @@ def build_operational_trends(artifacts_dir: Path, days: int = 30) -> dict[str, A
         "available_snapshots": len(snapshots),
         "current_snapshot": current_meta["id"],
         "baseline_snapshot": baseline_meta["id"],
+        "current_generated_at": current_meta["generated_at"],
+        "baseline_generated_at": baseline_meta["generated_at"],
         "current": current_summary,
         "baseline": baseline_summary,
         "deltas": deltas,
