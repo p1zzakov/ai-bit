@@ -17,11 +17,11 @@ def main() -> None:
     text = replace_once(
         text,
         "from ai_provider import ai_status, generate_advice",
-        "from ai_provider import ai_status, generate_advice\nfrom admin_dashboard import admin_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html",
-        "business architecture and admin imports",
+        "from ai_provider import ai_status, generate_advice\nfrom admin_dashboard import admin_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
+        "rc imports",
     )
-    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.2"')
-    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.2"')
+    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.3"')
+    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.3"')
 
     root_marker = '''@app.get("/", response_class=HTMLResponse)
 async def executive_root() -> str:
@@ -73,8 +73,22 @@ async def business_architecture_latest() -> dict[str, Any]:
         return read_latest_business_architecture(settings.browser_artifacts_dir)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="No business architecture audit is available") from None
+
+
+@app.get("/system", response_class=HTMLResponse)
+async def system_dashboard() -> str:
+    return system_dashboard_html()
+
+
+@app.get("/system/health")
+async def system_health() -> dict[str, Any]:
+    return await build_system_health(
+        settings.browser_artifacts_dir,
+        CRAWL_HISTORY,
+        settings.browser_base_url,
+    )
 '''
-    text = replace_once(text, marker, addition, "business architecture endpoints")
+    text = replace_once(text, marker, addition, "business architecture and system endpoints")
 
     graph_line = '    graph = build_unified_graph(crawl, operations)\n    compact_context = {'
     graph_replacement = '''    graph = build_unified_graph(crawl, operations)
@@ -113,7 +127,7 @@ async def business_architecture_latest() -> dict[str, Any]:
     text = replace_once(text, context_marker, context_addition, "AI business architecture context")
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT unified admin patch 1.0.0-rc.2")
+    print("Applied AI-BIT System Health patch 1.0.0-rc.3")
 
 
 if __name__ == "__main__":
