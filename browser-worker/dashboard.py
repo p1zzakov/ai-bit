@@ -3,52 +3,43 @@ from __future__ import annotations
 
 def dashboard_html() -> str:
     return r'''<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI-BIT Audit Dashboard</title>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI-BIT — аудит внедрения</title>
 <style>
-:root{color-scheme:dark;--bg:#0b1020;--panel:#121a2d;--line:#26324d;--text:#eef3ff;--muted:#9ba8c5;--ok:#38d996;--warn:#ffbd59;--bad:#ff637d;--accent:#6ea8fe}
-*{box-sizing:border-box}body{margin:0;font:14px/1.45 Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{padding:24px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;position:sticky;top:0;background:rgba(11,16,32,.94);backdrop-filter:blur(12px);z-index:5}
-h1{margin:0;font-size:24px}.muted{color:var(--muted)}button,select{background:#19233b;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
-main{padding:24px 28px;max-width:1600px;margin:auto}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}.metric{font-size:30px;font-weight:700;margin-top:8px}
-section{margin-top:18px}.two{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.bar{height:12px;background:#202b45;border-radius:8px;overflow:hidden}.bar>span{display:block;height:100%;background:var(--accent)}
-table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:600}.pill{display:inline-block;padding:3px 8px;border-radius:999px;background:#24304a}.ok{color:var(--ok)}.partial,.redirected{color:var(--warn)}.denied,.error,.not_found{color:var(--bad)}
-.tree{max-height:520px;overflow:auto}.node{padding:8px 10px;margin:4px 0;border-left:2px solid var(--line);background:#10182a;border-radius:6px}.node a{color:var(--text);text-decoration:none}.node a:hover{color:var(--accent)}
-.diff li{margin:7px 0}.empty{padding:28px;text-align:center;color:var(--muted)}
-@media(max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}}@media(max-width:600px){header,main{padding:16px}.grid{grid-template-columns:1fr}}
-</style>
-</head>
-<body>
-<header><div><h1>AI-BIT Audit Dashboard</h1><div class="muted">Карта портала, история и изменения</div></div><div><select id="audit"></select> <button id="refresh">Обновить</button></div></header>
+:root{color-scheme:dark;--bg:#08101d;--panel:#101b2d;--panel2:#15233a;--line:#283956;--text:#eef5ff;--muted:#91a3bd;--ok:#39d98a;--warn:#ffbd59;--bad:#ff617b;--accent:#62a0ff;--purple:#aa8cff}
+*{box-sizing:border-box}body{margin:0;font:14px/1.45 Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,#08101d,#0c1424);color:var(--text)}
+a{color:var(--accent);text-decoration:none}header{padding:22px 28px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:center;position:sticky;top:0;background:rgba(8,16,29,.94);backdrop-filter:blur(14px);z-index:5}h1,h2,h3{margin:0}h1{font-size:24px}.muted{color:var(--muted)}button,select{background:#172640;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 12px}main{padding:24px 28px;max-width:1800px;margin:auto}.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}.card{background:rgba(16,27,45,.96);border:1px solid var(--line);border-radius:15px;padding:18px;box-shadow:0 14px 40px rgba(0,0,0,.14)}.metric{font-size:30px;font-weight:750;margin-top:8px}.score{font-size:46px;color:var(--accent)}section{margin-top:18px}.two{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.three{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.bar{height:10px;background:#202f49;border-radius:8px;overflow:hidden}.bar>span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--purple))}.pill{display:inline-block;padding:4px 9px;border-radius:999px;background:#21314c;font-size:12px}.used,.ok{color:var(--ok)}.needs_configuration,.partial,.redirected{color:var(--warn)}.blocked,.not_detected,.denied,.error,.not_found{color:var(--bad)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:600}.scroll{overflow:auto;max-height:620px}.module{display:grid;grid-template-columns:1.1fr .8fr 2fr;gap:12px;align-items:start;padding:14px 0;border-bottom:1px solid var(--line)}.rec{padding:14px;border-left:3px solid var(--warn);background:#121f34;border-radius:8px;margin:10px 0}.rec.high{border-color:var(--bad)}.rec.low{border-color:var(--accent)}.tree{max-height:620px;overflow:auto}.node{padding:7px 10px;margin:4px 0;border-left:2px solid var(--line);background:#0e192a;border-radius:6px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.tab{cursor:pointer}.tab.active{border-color:var(--accent);color:white}.view{display:none}.view.active{display:block}.empty{padding:28px;text-align:center;color:var(--muted)}.badge{font-size:11px;text-transform:uppercase;letter-spacing:.05em}.critical{color:var(--bad)}.recommended{color:var(--warn)}.optional{color:var(--muted)}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(2,1fr)}.two,.three{grid-template-columns:1fr}}@media(max-width:620px){header,main{padding:16px}.grid{grid-template-columns:1fr}.module{grid-template-columns:1fr}}
+</style></head><body>
+<header><div><h1>AI-BIT — аудит внедрения</h1><div class="muted">Фактическое использование, пробелы и рекомендации</div></div><div><select id="audit"></select> <button id="refresh">Обновить</button></div></header>
 <main>
 <div class="grid">
- <div class="card"><div class="muted">Посещено</div><div class="metric" id="visited">—</div></div>
- <div class="card"><div class="muted">Обнаружено</div><div class="metric" id="scheduled">—</div></div>
- <div class="card"><div class="muted">Ошибки</div><div class="metric" id="errors">—</div></div>
- <div class="card"><div class="muted">Разделы</div><div class="metric" id="sections">—</div></div>
+ <div class="card"><div class="muted">Implementation score</div><div class="metric score" id="score">—</div><div id="maturity" class="muted"></div></div>
+ <div class="card"><div class="muted">Используется</div><div class="metric used" id="used">—</div></div>
+ <div class="card"><div class="muted">Требует настройки</div><div class="metric needs_configuration" id="needs">—</div></div>
+ <div class="card"><div class="muted">Недоступно</div><div class="metric blocked" id="blocked">—</div></div>
+ <div class="card"><div class="muted">Не обнаружено</div><div class="metric not_detected" id="missing">—</div></div>
 </div>
-<section class="two">
- <div class="card"><h3>Покрытие по разделам</h3><div id="sectionBars"></div></div>
- <div class="card"><h3>Изменения с предыдущего аудита</h3><div id="diff" class="diff"></div></div>
-</section>
-<section class="two">
- <div class="card"><h3>Карта портала</h3><div id="tree" class="tree"></div></div>
- <div class="card"><h3>Страницы</h3><div style="overflow:auto;max-height:520px"><table><thead><tr><th>Раздел</th><th>Страница</th><th>Статус</th></tr></thead><tbody id="pages"></tbody></table></div></div>
-</section>
+<div class="tabs"><button class="tab active" data-view="overview">Обзор</button><button class="tab" data-view="modules">Модули</button><button class="tab" data-view="recommendations">Рекомендации</button><button class="tab" data-view="map">Карта портала</button><button class="tab" data-view="changes">Изменения</button></div>
+<div id="overview" class="view active">
+ <section class="two"><div class="card"><h3>Что уже используется</h3><div id="usedList"></div></div><div class="card"><h3>Что требует внимания</h3><div id="attention"></div></div></section>
+ <section class="two"><div class="card"><h3>Покрытие по разделам</h3><div id="sectionBars"></div></div><div class="card"><h3>Обнаруженные нестандартные разделы</h3><div id="custom"></div></div></section>
+</div>
+<div id="modules" class="view"><section class="card"><h3>Матрица внедрения</h3><div id="moduleMatrix"></div></section></div>
+<div id="recommendations" class="view"><section class="two"><div class="card"><h3>Рекомендации по приоритету</h3><div id="recommendationList"></div></div><div class="card"><h3>Методика</h3><p>AI-BIT сравнивает обнаруженную конфигурацию с типовой целевой моделью Bitrix24: CRM, задачи, структура, процессы, документы, знания, BI, коммуникации и интеграции.</p><p class="muted" id="disclaimer"></p></div></section></div>
+<div id="map" class="view"><section class="two"><div class="card"><h3>Карта портала</h3><div id="tree" class="tree"></div></div><div class="card"><h3>Все страницы</h3><div class="scroll"><table><thead><tr><th>Раздел</th><th>Страница</th><th>Статус</th></tr></thead><tbody id="pages"></tbody></table></div></div></section></div>
+<div id="changes" class="view"><section class="card"><h3>Изменения с предыдущего аудита</h3><div id="diff"></div></section></div>
 </main>
 <script>
-const $=s=>document.querySelector(s);let history=[];
+const $=s=>document.querySelector(s);let history=[];const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function getJSON(url){const r=await fetch(url);if(!r.ok)throw new Error(await r.text());return r.json()}
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function loadHistory(){history=await getJSON('/crawl/history');const sel=$('#audit');sel.innerHTML=history.map(x=>`<option value="${esc(x.id)}">${esc(x.created_at)} — ${x.summary?.visited??0} стр.</option>`).join('');if(history.length)await loadAudit(history[0].id);else showEmpty()}
-function showEmpty(){$('#tree').innerHTML='<div class="empty">Запустите первый crawl</div>';$('#pages').innerHTML='';}
-async function loadAudit(id){const data=await getJSON('/crawl/history/'+encodeURIComponent(id));const s=data.summary||{};$('#visited').textContent=s.visited??0;$('#scheduled').textContent=s.scheduled??0;$('#errors').textContent=s.errors??0;$('#sections').textContent=Object.keys(s.sections||{}).length;renderSections(s.sections||{});renderNodes(data.nodes||[]);await renderDiff(id)}
+function moduleCard(m){return `<div class="module"><div><b>${esc(m.title)}</b><div class="muted">${esc(m.why)}</div></div><div><span class="pill ${esc(m.state)}">${esc(m.state)}</span><div class="badge ${esc(m.priority)}">${esc(m.priority)}</div></div><div>${m.pages} стр.${(m.sample_pages||[]).slice(0,3).map(p=>`<div><a target="_blank" href="${esc(p.url)}">${esc(p.title||p.url)}</a></div>`).join('')}</div></div>`}
+async function loadHistory(){history=await getJSON('/crawl/history');$('#audit').innerHTML=history.map(x=>`<option value="${esc(x.id)}">${esc(x.created_at)} — ${x.summary?.visited??0} стр.</option>`).join('');if(history.length)await loadAudit(history[0].id);}
+async function loadAudit(id){const data=await getJSON('/crawl/history/'+encodeURIComponent(id));const a=await getJSON('/crawl/assessment/'+encodeURIComponent(id));renderAssessment(a);renderSections(data.summary?.sections||{});renderNodes(data.nodes||[]);await renderDiff(id)}
+function renderAssessment(a){$('#score').textContent=(a.implementation_score??0)+'%';$('#maturity').textContent=a.maturity||'';$('#used').textContent=a.counts?.used??0;$('#needs').textContent=a.counts?.needs_configuration??0;$('#blocked').textContent=a.counts?.blocked??0;$('#missing').textContent=a.counts?.not_detected??0;$('#usedList').innerHTML=(a.used||[]).map(moduleCard).join('')||'<div class="empty">Не обнаружено</div>';$('#attention').innerHTML=[...(a.blocked||[]),...(a.needs_configuration||[]),...(a.not_detected||[])].map(moduleCard).join('')||'<div class="empty">Критичных пробелов нет</div>';$('#moduleMatrix').innerHTML=(a.modules||[]).map(moduleCard).join('');$('#recommendationList').innerHTML=(a.recommendations||[]).map(r=>`<div class="rec ${esc(r.severity)}"><b>${esc(r.title)}</b> <span class="pill">${esc(r.severity)}</span><p>${esc(r.recommendation)}</p><div class="muted">Ценность: ${esc(r.business_value)}</div></div>`).join('')||'<div class="empty">Рекомендаций нет</div>';$('#custom').innerHTML=(a.custom_sections||[]).map(x=>`<span class="pill" style="margin:4px">${esc(x)}</span>`).join('')||'<div class="muted">Нет</div>';$('#disclaimer').textContent=a.disclaimer||''}
 function renderSections(sections){const max=Math.max(1,...Object.values(sections));$('#sectionBars').innerHTML=Object.entries(sections).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="margin:12px 0"><div style="display:flex;justify-content:space-between"><span>${esc(k)}</span><b>${v}</b></div><div class="bar"><span style="width:${Math.round(v/max*100)}%"></span></div></div>`).join('')}
-function renderNodes(nodes){$('#pages').innerHTML=nodes.map(n=>`<tr><td>${esc(n.section)}</td><td><a href="${esc(n.url)}" target="_blank">${esc(n.title||n.url)}</a></td><td><span class="pill ${esc(n.status)}">${esc(n.status)}</span></td></tr>`).join('');$('#tree').innerHTML=nodes.sort((a,b)=>(a.depth??0)-(b.depth??0)).map(n=>`<div class="node" style="margin-left:${Math.min(6,n.depth||0)*18}px"><span class="muted">${esc(n.section)}</span> · <a href="${esc(n.url)}" target="_blank">${esc(n.title||n.url)}</a></div>`).join('')}
-async function renderDiff(id){const idx=history.findIndex(x=>x.id===id);if(idx<0||idx===history.length-1){$('#diff').innerHTML='<div class="empty">Нет предыдущего аудита для сравнения</div>';return}const before=history[idx+1].id;const d=await getJSON(`/crawl/diff?before=${encodeURIComponent(before)}&after=${encodeURIComponent(id)}`);$('#diff').innerHTML=`<div class="grid" style="grid-template-columns:repeat(3,1fr)"><div><b class="ok">+${d.summary.added}</b><div class="muted">добавлено</div></div><div><b class="denied">-${d.summary.removed}</b><div class="muted">удалено</div></div><div><b>${d.summary.changed}</b><div class="muted">изменено</div></div></div><ul>${d.added.slice(0,8).map(x=>`<li class="ok">+ ${esc(x.title||x.url)}</li>`).join('')}${d.removed.slice(0,8).map(x=>`<li class="denied">− ${esc(x.title||x.url)}</li>`).join('')}</ul>`}
-$('#audit').addEventListener('change',e=>loadAudit(e.target.value));$('#refresh').addEventListener('click',loadHistory);loadHistory().catch(e=>{$('#tree').innerHTML='<div class="empty">'+esc(e.message)+'</div>'});
-</script>
-</body></html>'''
+function renderNodes(nodes){$('#pages').innerHTML=nodes.map(n=>`<tr><td>${esc(n.section)}</td><td><a href="${esc(n.url)}" target="_blank">${esc(n.title||n.url)}</a></td><td><span class="pill ${esc(n.status)}">${esc(n.status)}</span></td></tr>`).join('');$('#tree').innerHTML=[...nodes].sort((a,b)=>(a.depth??0)-(b.depth??0)).map(n=>`<div class="node" style="margin-left:${Math.min(6,n.depth||0)*18}px"><span class="muted">${esc(n.section)}</span> · <a href="${esc(n.url)}" target="_blank">${esc(n.title||n.url)}</a></div>`).join('')}
+async function renderDiff(id){const idx=history.findIndex(x=>x.id===id);if(idx<0||idx===history.length-1){$('#diff').innerHTML='<div class="empty">Нет предыдущего аудита</div>';return}const d=await getJSON(`/crawl/diff?before=${encodeURIComponent(history[idx+1].id)}&after=${encodeURIComponent(id)}`);$('#diff').innerHTML=`<div class="three"><div class="card"><b class="ok">+${d.summary.added}</b><div class="muted">добавлено</div></div><div class="card"><b class="blocked">-${d.summary.removed}</b><div class="muted">удалено</div></div><div class="card"><b>${d.summary.changed}</b><div class="muted">изменено</div></div></div><ul>${d.added.slice(0,15).map(x=>`<li class="ok">+ ${esc(x.title||x.url)}</li>`).join('')}${d.removed.slice(0,15).map(x=>`<li class="blocked">− ${esc(x.title||x.url)}</li>`).join('')}</ul>`}
+$('.tabs').addEventListener('click',e=>{if(!e.target.dataset.view)return;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));e.target.classList.add('active');$('#'+e.target.dataset.view).classList.add('active')});$('#audit').addEventListener('change',e=>loadAudit(e.target.value));$('#refresh').addEventListener('click',loadHistory);loadHistory().catch(e=>{document.querySelector('main').innerHTML='<div class="empty">'+esc(e.message)+'</div>'});
+</script></body></html>'''
