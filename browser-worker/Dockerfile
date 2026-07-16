@@ -15,13 +15,14 @@ COPY crawler.py ./crawler.py
 COPY history.py ./history.py
 COPY dashboard.py ./dashboard.py
 COPY implementation_analysis.py ./implementation_analysis.py
+COPY deep_audit.py ./deep_audit.py
 COPY build_patch.py ./build_patch.py
 COPY crawler_patch.py ./crawler_patch.py
 COPY history_patch.py ./history_patch.py
 RUN python ./build_patch.py \
     && python ./crawler_patch.py \
     && python ./history_patch.py \
-    && python -m py_compile ./app.py ./login_debug.py ./crawler.py ./history.py ./dashboard.py ./implementation_analysis.py
+    && python -m py_compile ./app.py ./login_debug.py ./crawler.py ./history.py ./dashboard.py ./implementation_analysis.py ./deep_audit.py
 RUN mkdir -p /app/artifacts /app/artifacts/history /app/state
 
 EXPOSE 8090
