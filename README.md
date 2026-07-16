@@ -1,39 +1,80 @@
-# AI-BIT
+# AI-BIT Enterprise
 
-AI-BIT — read-only платформа технического, функционального, операционного и управленческого аудита коробочного Bitrix24.
+AI-BIT Enterprise — read-only платформа непрерывного технического, функционального, операционного и управленческого аудита коробочного Bitrix24.
+
+## Vision
+
+Платформа обнаруживает проблемы, показывает evidence, объясняет причины и формирует приоритетный план цифровой трансформации на основе фактических данных портала.
+
+## Principles
+
+1. Только read-only работа с Bitrix24.
+2. Каждый вывод должен иметь REST, Browser или Operational evidence.
+3. Недостаток данных возвращается как `partial` или `insufficient_data`, а не как положительная оценка.
+4. AI работает только по переданным фактам.
+5. Рекомендации содержат проблему, действие и приоритет.
+6. Оценки должны быть воспроизводимыми и объяснимыми.
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-beta.2`.
+Browser Worker: `1.0.0-rc.1`.
 
-## Что добавлено в beta.2
+## Business Architecture Audit
 
-- Process Mining MVP;
-- компактные task events в operational snapshot;
-- группировка повторяющихся задач по нормализованному названию;
-- кандидаты на шаблоны задач и бизнес-процессы;
-- повторяющиеся маршруты `постановщик → исполнитель`;
-- выявление потенциальных ручных диспетчерских узлов;
-- automation score для приоритизации;
-- ориентировочная оценка ручного времени;
-- отдельный Process Mining Dashboard;
-- передача выводов Process Mining в Groq AI Coach.
+В `rc.1` добавлены три самостоятельных контура.
 
-Все операции против Bitrix24 выполняются в read-only режиме.
+### Business Process Audit
+
+- шаблоны и активность бизнес-процессов;
+- владельцы и описание назначения;
+- активные, завершённые и проблемные экземпляры при наличии REST evidence;
+- оценки `readiness`, `architecture`, `efficiency`, `automation`;
+- рекомендации по SLA, владельцам, ошибкам и зависшим экземплярам.
+
+### CRM Funnel Audit
+
+- CRM-воронки и стадии;
+- распределение сделок по стадиям;
+- неиспользуемые стадии;
+- сделки без ответственного, источника, суммы и следующей активности;
+- оценки `readiness`, `architecture`, `data_quality`, `efficiency`, `automation`;
+- рекомендации по структуре воронок, обязательным полям и контролю зависших сделок.
+
+### Document Flow Audit
+
+- документные бизнес-процессы;
+- задачи по договорам, счетам, актам, заявкам и согласованиям;
+- просрочка и задачи без срока;
+- повторяющиеся документные операции;
+- Browser evidence по страницам и формам;
+- оценки `readiness`, `architecture`, `efficiency`, `automation`, `governance`.
+
+Executive Dashboard показывает отдельно зрелость внедрения, бизнес-процессы, CRM-воронки, документооборот и общий `Enterprise Health`.
 
 ## Архитектура
 
-AI-BIT объединяет:
-
-- REST Collector;
-- Browser Worker и Portal Crawler;
-- Deep Audit;
-- Operational Intelligence;
-- Operational Trends 7/30/90;
-- Process Mining;
-- Unified Knowledge Graph;
-- AI Provider Layer на Groq;
-- Executive Dashboard.
+```text
+AI-BIT Enterprise
+├── Core
+│   ├── Browser Worker
+│   ├── REST Collector
+│   ├── Portal Crawler
+│   ├── Unified Knowledge Graph
+│   └── AI Provider Layer / Groq
+├── Enterprise Modules
+│   ├── Implementation Audit
+│   ├── Operational Intelligence
+│   ├── Operational Trends
+│   ├── Process Mining
+│   ├── Business Process Audit
+│   ├── CRM Funnel Audit
+│   └── Document Flow Audit
+└── Future Plugins
+    ├── 1C
+    ├── Power BI
+    ├── HR Intelligence
+    └── Finance Intelligence
+```
 
 ## Конфигурация
 
@@ -46,13 +87,12 @@ BROWSER_PASSWORD=change-me
 BROWSER_HEADLESS=true
 BROWSER_TIMEOUT_MS=45000
 BROWSER_IGNORE_HTTPS_ERRORS=false
-
 AI_PROVIDER=groq
 AI_MODEL=llama-3.3-70b-versatile
 GROQ_API_KEY=
 ```
 
-Не коммитьте `.env`, webhook URL, пароли, токены, Groq API key и browser storage state.
+Webhook должен иметь read-доступ к CRM, пользователям, структуре, задачам и бизнес-процессам. Недоступные методы не останавливают аудит: соответствующий контур получает `partial` или `insufficient_data`.
 
 ## Развёртывание
 
@@ -70,119 +110,93 @@ docker compose up -d browser-worker
 curl -sS http://127.0.0.1:8090/health | jq
 ```
 
-Ожидаемая версия:
+Ожидаем:
 
 ```json
 {
-  "version": "1.0.0-beta.2"
+  "version": "1.0.0-rc.1"
 }
 ```
 
 ## Интерфейсы
 
 ```text
-http://SERVER_IP:8090/           Executive Dashboard и AI Coach
-http://SERVER_IP:8090/executive  Executive Dashboard и AI Coach
-http://SERVER_IP:8090/dashboard  Аудит внедрения
-http://SERVER_IP:8090/operations Operational Intelligence
-http://SERVER_IP:8090/processes  Process Mining
+http://SERVER_IP:8090/                       Executive Dashboard и AI Coach
+http://SERVER_IP:8090/executive              Executive Dashboard и AI Coach
+http://SERVER_IP:8090/dashboard              Аудит внедрения
+http://SERVER_IP:8090/operations             Operational Intelligence
+http://SERVER_IP:8090/processes              Process Mining
+http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 ```
 
 ## Сбор данных
 
-После обновления обязательно собрать новый snapshot: старые snapshot не содержат `task_events`.
+Сначала обновить operational snapshot:
 
 ```bash
-curl -sS -X POST \
-  http://127.0.0.1:8090/operations/collect \
-  -o /tmp/operations-beta2.json
+curl -sS -X POST http://127.0.0.1:8090/operations/collect -o /tmp/operations-rc1.json
 ```
 
-Проверка:
+Затем запустить Business Architecture Audit:
 
 ```bash
-jq '{summary, process_mining_summary}' /tmp/operations-beta2.json
-```
-
-## Process Mining API
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/process-mining/latest \
-  | jq
+curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect -o /tmp/business-architecture.json
 ```
 
 Краткая сводка:
 
 ```bash
-curl -sS \
-  http://127.0.0.1:8090/process-mining/latest \
-  | jq '.summary'
+jq '{enterprise_health,status,summary}' /tmp/business-architecture.json
 ```
 
-Кандидаты на автоматизацию:
+## Business Architecture API
 
 ```bash
-curl -sS \
-  http://127.0.0.1:8090/process-mining/latest \
-  | jq '.automation_candidates[] | {
-      sample_title,
-      count,
-      overdue,
-      without_deadline,
-      automation_score,
-      estimated_manual_minutes,
-      recommendation
-    }'
+curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect | jq
+curl -sS http://127.0.0.1:8090/business-architecture/latest | jq
+curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.domains.business_processes'
+curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.domains.crm'
+curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.domains.documents'
 ```
 
-Повторяющиеся маршруты:
+Рекомендации высокого приоритета:
 
 ```bash
-curl -sS \
-  http://127.0.0.1:8090/process-mining/latest \
-  | jq '.handoff_routes'
+curl -sS http://127.0.0.1:8090/business-architecture/latest | jq '.recommendations[] | select(.severity == "high" or .severity == "critical")'
 ```
-
-Потенциальные узкие места:
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/process-mining/latest \
-  | jq '.bottlenecks'
-```
-
-## Как считается Process Mining MVP
-
-- названия задач приводятся к нижнему регистру;
-- из названий удаляются URL, номера и служебные слова;
-- одинаковые нормализованные названия группируются;
-- паттерн с тремя и более задачами считается повторяющимся;
-- отдельно анализируются устойчивые пары постановщик → исполнитель;
-- automation score повышается при высокой частоте, просрочке и задачах без срока;
-- оценка ручного времени использует базовое допущение: 5 минут на повторяющуюся операцию.
-
-Оценка времени не является подтверждённым ROI. Перед внедрением владелец процесса должен подтвердить частоту, сложность и стоимость ручной операции.
 
 ## Groq AI Coach
 
-AI Coach доступен на `/executive`. Он получает:
-
-- audit evidence;
-- operational summary;
-- тренды;
-- кандидатов на автоматизацию;
-- повторяющиеся маршруты;
-- потенциальные узкие места.
+AI Coach на `/executive` получает implementation audit, operational summary, тренды, Process Mining и Business Architecture Audit.
 
 Примеры вопросов:
 
 ```text
-Какие повторяющиеся задачи стоит автоматизировать первыми?
-Какие маршруты постановщик → исполнитель похожи на ручную диспетчеризацию?
-Сформируй план автоматизации на 30 дней.
-Какие кандидаты дадут максимальную экономию времени?
+Какие бизнес-процессы настроены неправильно и почему?
+Где чаще всего зависают согласования?
+Какие стадии CRM-воронки нужно убрать или объединить?
+Почему сделки остаются без следующего действия?
+Насколько готов документооборот?
+Что автоматизировать в первую очередь?
 ```
+
+## Evidence model
+
+Каждый домен возвращает:
+
+```text
+score
+status
+evidence_status
+scores
+summary
+recommendations
+sources
+```
+
+Статусы: `mature`, `ready`, `needs_optimization`, `partially_ready`, `not_ready`, `insufficient_data`.
+
+Evidence: `complete`, `partial`, `missing`.
 
 ## Основные API
 
@@ -192,46 +206,33 @@ GET  /executive
 GET  /dashboard
 GET  /operations
 GET  /processes
-GET  /health
-POST /login
-POST /crawl
-GET  /crawl/history
-GET  /crawl/assessment/latest
-GET  /crawl/deep-audit/latest
-GET  /crawl/diff
+GET  /business-architecture
 POST /operations/collect
 GET  /operations/latest
-GET  /operations/history
 GET  /operations/trends?days=7|30|90
 GET  /process-mining/latest
+POST /business-architecture/collect
+GET  /business-architecture/latest
 GET  /knowledge-graph/latest
 GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения beta.2
+## Ограничения rc.1
 
-- качество Process Mining зависит от дисциплины наименования задач;
-- одинаковое название не гарантирует одинаковый бизнес-процесс;
-- задачи из старых snapshot не участвуют в анализе;
-- оценка времени ориентировочная и не является финансовым эффектом;
-- показатели сотрудников не являются самостоятельной кадровой оценкой;
-- перед передачей персональных данных во внешний AI требуется корпоративная политика.
+- методы бизнес-процессов зависят от редакции Bitrix24 и прав webhook;
+- часть настроек доступна только Browser Worker;
+- документооборот оценивается по совокупности REST, task events и Browser evidence;
+- отсутствие evidence не означает отсутствие процесса;
+- точность эффективности растёт после накопления истории;
+- AI не заменяет подтверждение владельцем процесса.
 
-## Roadmap 1.0.0
+## Roadmap
 
 - `alpha.1` — Unified Knowledge Graph и AI Provider Layer;
 - `alpha.2` — динамика 7/30/90 дней;
-- `alpha.3` — Process Mining MVP, реализован в составе beta.2;
-- `beta.1` — Executive Dashboard и встроенный AI Coach;
-- `beta.2` — Process Mining, первичная оценка эффекта и расширенный AI Coach;
-- `1.0.0` — стабилизация, управленческий отчёт и документация.
-
-## Правило разработки
-
-1. изменения выполняются в ветке;
-2. commit и push;
-3. `git pull` на сервере;
-4. пересборка контейнера;
-5. smoke test;
-6. merge после проверки.
+- `beta.1` — Executive Dashboard и AI Coach;
+- `beta.2` — Process Mining;
+- `rc.1` — Business Process, CRM Funnel и Document Flow Audit;
+- `1.0.0` — стабилизация, отчёт, тесты и документация;
+- `1.1+` — Enterprise-модули и интеграции.
