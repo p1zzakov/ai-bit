@@ -18,15 +18,15 @@ def main() -> None:
     text = replace_once(
         text,
         "from fastapi import FastAPI, HTTPException",
-        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation",
+        "from fastapi import FastAPI, HTTPException, Query\nfrom fastapi.responses import HTMLResponse\n\nfrom dashboard import dashboard_html\nfrom deep_audit import analyze_deep_audit\nfrom history import CrawlHistory, diff_crawls\nfrom implementation_analysis import analyze_implementation\nfrom operational_intelligence import collect_operational_snapshot, read_latest_operational\nfrom operations_dashboard import operations_dashboard_html",
         "history imports",
     )
 
     text = text.replace(
         'FastAPI(title="AI-BIT Browser Worker", version="0.5.0")',
-        'FastAPI(title="AI-BIT Browser Worker", version="0.8.0")',
+        'FastAPI(title="AI-BIT Browser Worker", version="0.9.0")',
     )
-    text = text.replace('"version": "0.5.0"', '"version": "0.8.0"')
+    text = text.replace('"version": "0.5.0"', '"version": "0.9.0"')
 
     settings_marker = "settings = Settings()\n"
     text = replace_once(
@@ -70,6 +70,27 @@ async def latest_crawl() -> dict[str, Any]:
     endpoints = '''@app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard() -> str:
     return dashboard_html()
+
+
+@app.get("/operations", response_class=HTMLResponse)
+async def operations_dashboard() -> str:
+    return operations_dashboard_html()
+
+
+@app.post("/operations/collect")
+async def operations_collect() -> dict[str, Any]:
+    try:
+        return await collect_operational_snapshot(settings.browser_artifacts_dir)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@app.get("/operations/latest")
+async def operations_latest() -> dict[str, Any]:
+    try:
+        return read_latest_operational(settings.browser_artifacts_dir)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="No operational snapshot is available") from None
 
 
 @app.get("/crawl/history")
@@ -137,7 +158,7 @@ async def crawl_diff(before: str, after: str) -> dict[str, Any]:
     text = text.replace(marker, endpoints + marker, 1)
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT deep audit dashboard patch 0.8.0")
+    print("Applied AI-BIT operational intelligence patch 0.9.0")
 
 
 if __name__ == "__main__":
