@@ -1,0 +1,67 @@
+{
+  "home": {
+    "path": "/",
+    "wait_for": ["#workarea-content", ".feed-post-block", "body"],
+    "critical": false
+  },
+  "crm": {
+    "path": "/crm/",
+    "wait_for": [".crm-kanban", ".main-grid", "#workarea-content"],
+    "critical": true
+  },
+  "tasks": {
+    "path": "/company/personal/user/0/tasks/",
+    "wait_for": [".tasks-interface", ".main-grid", "#workarea-content"],
+    "critical": true
+  },
+  "groups": {
+    "path": "/workgroups/",
+    "wait_for": [".socialnetwork-group-list", ".main-grid", "#workarea-content"],
+    "critical": false
+  },
+  "disk": {
+    "path": "/docs/",
+    "wait_for": [".disk-folder-list", ".main-grid", "#workarea-content"],
+    "critical": false
+  },
+  "knowledge": {
+    "path": "/knowledge/",
+    "wait_for": [".landing-site-list", ".ui-page-slider-workarea", "#workarea-content"],
+    "critical": false
+  },
+  "calendar": {
+    "path": "/calendar/",
+    "wait_for": [".calendar-grid", ".calendar-page-container", "#workarea-content"],
+    "critical": false
+  },
+  "company": {
+    "path": "/company/",
+    "wait_for": [".intranet-user-list", ".main-grid", "#workarea-content"],
+    "critical": true
+  },
+  "contact_center": {
+    "path": "/services/contact_center/",
+    "wait_for": [".contact-center", ".ui-tile-list", "#workarea-content"],
+    "critical": false
+  },
+  "openlines": {
+    "path": "/services/contact_center/dialog_statistics/",
+    "wait_for": [".main-grid", ".imopenlines-statistics", "#workarea-content"],
+    "critical": false
+  },
+  "bizproc": {
+    "path": "/bizproc/",
+    "wait_for": [".bizproc-list", ".main-grid", "#workarea-content"],
+    "critical": true
+  },
+  "rpa": {
+    "path": "/rpa/",
+    "wait_for": [".rpa-kanban", ".main-grid", "#workarea-content"],
+    "critical": false
+  },
+  "market": {
+    "path": "/marketplace/",
+    "wait_for": [".marketplace-apps", ".marketplace-list", "#workarea-content"],
+    "critical": false
+  }
+}
