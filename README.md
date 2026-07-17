@@ -18,28 +18,27 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.7`.
+Browser Worker: `1.0.0-rc.8`.
 
-## Что добавлено в rc.7
+## Что добавлено в rc.8
 
-### Developer Attribution & Brand Integrity
+### Brand Cleanup
 
-- на все HTML-страницы автоматически добавляется единая подпись:
+- устранено дублирование подписи разработчика в Unified Enterprise Admin;
+- внешняя оболочка админки отображает один экземпляр подписи;
+- страницы, загруженные внутри `iframe`, не добавляют собственный fixed-footer;
+- при прямом открытии `/executive`, `/dashboard`, `/operations` и других модулей подпись сохраняется;
+- HTML/PDF-отчёты продолжают содержать независимую подпись разработчика;
+- middleware остаётся идемпотентным: существующий `ai-bit-developer-attribution` повторно не добавляется;
+- версия всех runtime-компонентов приведена к `1.0.0-rc.8`.
+
+Подпись:
 
 ```text
 Разработчик: Коваленко А.С. · pizzakov@gmail.com
 ```
 
-- подпись внедряется централизованным middleware и не требует ручного копирования в каждый dashboard;
-- HTML- и PDF-отчёты содержат данные разработчика;
-- JSON-отчёт содержит секцию `developer`;
-- `/health` содержит поля `product`, `developer`, `contact` и `brand_integrity`;
-- `/system/health` показывает состояние Brand Integrity;
-- при изменении обязательных метаданных система не ломается, а возвращает предупреждение;
-- добавлены страница `/about` и API `/about/meta`;
-- конфигурация проверяется контрольным SHA-256 digest.
-
-Brand Integrity предназначен для обнаружения изменений обязательной подписи. Он не содержит намеренных механизмов отказа, саботажа или скрытой блокировки системы.
+Brand Integrity обнаруживает изменения обязательных метаданных, но не блокирует и не ломает работу системы.
 
 ## Разработчик
 
@@ -94,6 +93,7 @@ http://SERVER_IP:8090/admin
 #reports
 #automation
 #system
+#about
 ```
 
 ## Конфигурация
@@ -115,16 +115,12 @@ GROQ_API_KEY=
 SCHEDULER_ENABLED=true
 SCHEDULER_TIMEZONE=Asia/Almaty
 SCHEDULER_POLL_SECONDS=30
-
 SCHEDULER_OPERATIONS_ENABLED=true
 SCHEDULER_OPERATIONS_SCHEDULE=daily@06:00
-
 SCHEDULER_BUSINESS_ARCHITECTURE_ENABLED=true
 SCHEDULER_BUSINESS_ARCHITECTURE_SCHEDULE=weekly:mon@07:00
-
 SCHEDULER_CRAWL_ENABLED=true
 SCHEDULER_CRAWL_SCHEDULE=weekly:sun@03:00
-
 SCHEDULER_EXECUTIVE_REPORT_ENABLED=true
 SCHEDULER_EXECUTIVE_REPORT_SCHEDULE=monthly:1@08:00
 ```
@@ -152,7 +148,7 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "1.0.0-rc.7",
+  "version": "1.0.0-rc.8",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com",
@@ -187,17 +183,6 @@ curl -sS http://127.0.0.1:8090/system/health | jq '.brand_integrity,.developer'
 curl -sS http://127.0.0.1:8090/health | jq '{product,developer,contact,brand_integrity}'
 ```
 
-В нормальном состоянии:
-
-```json
-{
-  "status": "ok",
-  "valid": true,
-  "marker": "ai-bit-developer-attribution",
-  "message": "Developer attribution configuration is intact"
-}
-```
-
 ## Scheduling API
 
 ```bash
@@ -215,33 +200,12 @@ curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
 curl -sS http://127.0.0.1:8090/reports | jq
 ```
 
-Форматы скачивания:
+Форматы:
 
 ```text
 GET /reports/{REPORT_ID}/html
 GET /reports/{REPORT_ID}/json
 GET /reports/{REPORT_ID}/pdf
-```
-
-Новые отчёты содержат подпись разработчика в HTML, PDF и JSON.
-
-## System Health API
-
-```bash
-curl -sS http://127.0.0.1:8090/system/health | jq
-```
-
-## Groq AI Coach
-
-AI Coach получает implementation audit, operational summary, тренды, Process Mining и Business Architecture Audit.
-
-Примеры вопросов:
-
-```text
-Какие бизнес-процессы настроены неправильно и почему?
-Какие стадии CRM-воронки нужно убрать или объединить?
-Насколько готов документооборот?
-Что автоматизировать в первую очередь?
 ```
 
 ## Основные API
@@ -277,12 +241,12 @@ GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения rc.7
+## Ограничения rc.8
 
-- Brand Integrity обнаруживает изменение централизованной конфигурации, но не блокирует работу системы;
-- middleware применяется только к ответам `text/html`;
-- ранее сформированные PDF не изменяются — подпись появится в новых отчётах;
-- планировщик работает внутри процесса Browser Worker и требует постоянно запущенный контейнер;
+- определение iframe использует стандартный заголовок браузера `Sec-Fetch-Dest: iframe`;
+- при прямом запросе нестандартным клиентом подпись может отображаться как для самостоятельной страницы;
+- ранее сформированные PDF не изменяются;
+- планировщик работает внутри процесса Browser Worker;
 - AI не заменяет подтверждение владельцем процесса.
 
 ## Roadmap
@@ -298,5 +262,6 @@ POST /ai/advice
 - `rc.5` — Reports & Export;
 - `rc.6` — Scheduling & Automation;
 - `rc.7` — Developer Attribution & Brand Integrity;
+- `rc.8` — Brand Cleanup и единая подпись в админке;
 - `1.0.0` — стабилизация, тесты и релизная документация;
 - `2.0` — Digital Maturity, AI Consultant, ROI, HeatMap и Digital Twin.
