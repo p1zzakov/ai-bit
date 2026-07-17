@@ -33,6 +33,8 @@ COPY management_report.py ./management_report.py
 COPY management_report_dashboard.py ./management_report_dashboard.py
 COPY executive_intelligence.py ./executive_intelligence.py
 COPY executive_intelligence_dashboard.py ./executive_intelligence_dashboard.py
+COPY reference_model.py ./reference_model.py
+COPY reference_models.json ./reference_models.json
 COPY scheduler_engine.py ./scheduler_engine.py
 COPY automation_dashboard.py ./automation_dashboard.py
 COPY branding.py ./branding.py
@@ -49,6 +51,7 @@ COPY management_intelligence_patch.py ./management_intelligence_patch.py
 COPY management_report_enrichment_patch.py ./management_report_enrichment_patch.py
 COPY executive_brief_patch.py ./executive_brief_patch.py
 COPY mandatory_processes_patch.py ./mandatory_processes_patch.py
+COPY reference_model_patch.py ./reference_model_patch.py
 RUN python ./build_patch.py \
     && python ./crawler_patch.py \
     && python ./history_patch.py \
@@ -60,8 +63,9 @@ RUN python ./build_patch.py \
     && python ./management_report_enrichment_patch.py \
     && python ./executive_brief_patch.py \
     && python ./mandatory_processes_patch.py \
-    && python -m py_compile ./app.py ./login_debug.py ./crawler.py ./history.py ./dashboard.py ./implementation_analysis.py ./deep_audit.py ./operational_intelligence.py ./operational_trends.py ./operations_dashboard.py ./executive_dashboard.py ./process_mining.py ./process_dashboard.py ./business_architecture.py ./business_architecture_dashboard.py ./admin_dashboard.py ./system_health.py ./system_dashboard.py ./report_engine.py ./reports_dashboard.py ./management_report.py ./management_report_dashboard.py ./executive_intelligence.py ./executive_intelligence_dashboard.py ./scheduler_engine.py ./automation_dashboard.py ./branding.py ./branding_patch.py ./management_report_patch.py ./executive_intelligence_patch.py ./management_intelligence_patch.py ./management_report_enrichment_patch.py ./executive_brief_patch.py ./mandatory_processes_patch.py ./unified_graph.py ./ai_provider.py
-RUN mkdir -p /app/artifacts /app/artifacts/history /app/artifacts/operations /app/artifacts/knowledge-graph /app/artifacts/process-mining /app/artifacts/business-architecture /app/artifacts/reports /app/artifacts/management-reports /app/artifacts/executive-intelligence /app/artifacts/scheduler /app/state
+    && python ./reference_model_patch.py \
+    && python -m py_compile ./app.py ./login_debug.py ./crawler.py ./history.py ./dashboard.py ./implementation_analysis.py ./deep_audit.py ./operational_intelligence.py ./operational_trends.py ./operations_dashboard.py ./executive_dashboard.py ./process_mining.py ./process_dashboard.py ./business_architecture.py ./business_architecture_dashboard.py ./admin_dashboard.py ./system_health.py ./system_dashboard.py ./report_engine.py ./reports_dashboard.py ./management_report.py ./management_report_dashboard.py ./executive_intelligence.py ./executive_intelligence_dashboard.py ./reference_model.py ./scheduler_engine.py ./automation_dashboard.py ./branding.py ./branding_patch.py ./management_report_patch.py ./executive_intelligence_patch.py ./management_intelligence_patch.py ./management_report_enrichment_patch.py ./executive_brief_patch.py ./mandatory_processes_patch.py ./reference_model_patch.py ./unified_graph.py ./ai_provider.py
+RUN mkdir -p /app/artifacts /app/artifacts/history /app/artifacts/operations /app/artifacts/knowledge-graph /app/artifacts/process-mining /app/artifacts/business-architecture /app/artifacts/reports /app/artifacts/management-reports /app/artifacts/executive-intelligence /app/artifacts/reference-audit /app/artifacts/scheduler /app/state
 
 EXPOSE 8090
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8090"]
