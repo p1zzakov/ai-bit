@@ -17,11 +17,19 @@ def main() -> None:
     text = replace_once(
         text,
         "from ai_provider import ai_status, generate_advice",
-        "from ai_provider import ai_status, generate_advice\nfrom fastapi.responses import FileResponse\nfrom admin_dashboard import admin_dashboard_html\nfrom automation_dashboard import automation_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom report_engine import generate_report, list_reports, report_file\nfrom reports_dashboard import reports_dashboard_html\nfrom scheduler_engine import SchedulerService\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
+        "from ai_provider import ai_status, generate_advice\nfrom fastapi.responses import FileResponse\nfrom admin_dashboard import admin_dashboard_html\nfrom automation_dashboard import automation_dashboard_html\nfrom branding import about_page_html, brand_integrity, install_branding, product_metadata\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom report_engine import generate_report, list_reports, report_file\nfrom reports_dashboard import reports_dashboard_html\nfrom scheduler_engine import SchedulerService\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
         "rc imports",
     )
-    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.6"')
-    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.6"')
+    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.7"')
+    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.7"')
+
+    app_marker = 'app = FastAPI(title="AI-BIT Browser Worker", version="1.0.0-rc.7")\n'
+    text = replace_once(
+        text,
+        app_marker,
+        app_marker + 'install_branding(app)\n',
+        "branding middleware",
+    )
 
     history_marker = 'CRAWL_HISTORY = CrawlHistory(Path("/app/artifacts/history"))\n'
     text = replace_once(
@@ -30,6 +38,35 @@ def main() -> None:
         history_marker + 'SCHEDULER = SchedulerService(settings.browser_artifacts_dir)\n',
         "scheduler service",
     )
+
+    health_marker = '''@app.get("/health")
+async def health() -> dict[str, Any]:
+    return {
+        "status": "ok",
+        "service": "AI-BIT Browser Worker",
+        "version": "1.0.0-rc.7",
+        "configured": bool(settings.browser_base_url),
+        "session_saved": settings.browser_state_file.exists(),
+    }
+'''
+    health_replacement = '''@app.get("/health")
+async def health() -> dict[str, Any]:
+    result = {
+        "status": "ok",
+        "service": "AI-BIT Browser Worker",
+        "version": "1.0.0-rc.7",
+        "configured": bool(settings.browser_base_url),
+        "session_saved": settings.browser_state_file.exists(),
+    }
+    result.update({
+        "product": "AI-BIT Enterprise",
+        "developer": "Коваленко А.С.",
+        "contact": "pizzakov@gmail.com",
+        "brand_integrity": brand_integrity(),
+    })
+    return result
+'''
+    text = replace_once(text, health_marker, health_replacement, "health branding metadata")
 
     root_marker = '''@app.get("/", response_class=HTMLResponse)
 async def executive_root() -> str:
@@ -80,6 +117,16 @@ async def scheduler_run(job_name: str) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="Unknown scheduler job") from None
     except RuntimeError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@app.get("/about", response_class=HTMLResponse)
+async def about_page() -> str:
+    return about_page_html("1.0.0-rc.7")
+
+
+@app.get("/about/meta")
+async def about_metadata() -> dict[str, Any]:
+    return product_metadata("1.0.0-rc.7")
 
 
 @app.get("/business-architecture", response_class=HTMLResponse)
@@ -150,13 +197,26 @@ async def system_dashboard() -> str:
 
 @app.get("/system/health")
 async def system_health() -> dict[str, Any]:
-    return await build_system_health(
+    result = await build_system_health(
         settings.browser_artifacts_dir,
         CRAWL_HISTORY,
         settings.browser_base_url,
     )
+    result["brand_integrity"] = brand_integrity()
+    result["developer"] = {
+        "name": "Коваленко А.С.",
+        "email": "pizzakov@gmail.com",
+    }
+    if result["brand_integrity"]["status"] != "ok":
+        result["overall_status"] = "warning"
+        result.setdefault("recommendations", []).append({
+            "severity": "warning",
+            "title": "Нарушена целостность обязательной подписи разработчика",
+            "action": "Проверить branding.py и восстановить централизованный компонент attribution.",
+        })
+    return result
 '''
-    text = replace_once(text, marker, addition, "automation business architecture reports and system endpoints")
+    text = replace_once(text, marker, addition, "branding automation business architecture reports and system endpoints")
 
     graph_line = '    graph = build_unified_graph(crawl, operations)\n    compact_context = {'
     graph_replacement = '''    graph = build_unified_graph(crawl, operations)
@@ -195,7 +255,7 @@ async def system_health() -> dict[str, Any]:
     text = replace_once(text, context_marker, context_addition, "AI business architecture context")
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT Scheduling & Automation patch 1.0.0-rc.6")
+    print("Applied AI-BIT Brand Integrity patch 1.0.0-rc.7")
 
 
 if __name__ == "__main__":
