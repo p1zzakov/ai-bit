@@ -18,31 +18,46 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.11`.
+Browser Worker: `1.0.0-rc.12`.
 
-## Что добавлено в rc.11
+## Что добавлено в rc.12
 
-### Executive Intelligence Suite
+### Management Report + Executive Intelligence
 
-Новый управленческий контур объединяет результаты всех аудитов и показывает руководству не только состояние Bitrix24, но и уровень цифровой управляемости компании.
+При формировании страницы **«Отчёт для руководства»** система теперь автоматически пересчитывает и передаёт Groq данные из Executive Intelligence Suite.
 
-Добавлены:
+В управленческий отчёт включаются:
 
-- **Digital Maturity Index** — единая оценка цифровой зрелости от 0 до 100;
-- оценки внедрения, управления, исполнения задач, бизнес-процессов, CRM, документооборота и автоматизации;
-- **AI Risk Center** — ранжированный список управленческих рисков с фактическими подтверждениями и последствиями;
-- **Department Rating** — рейтинг подразделений по дисциплине исполнения;
-- **Executive Feed** — короткая лента событий, рисков и возможностей;
-- **ROI Dashboard** — потенциальная экономия рабочего времени и, при наличии утверждённой стоимости часа, денежных средств;
-- **AI Roadmap** — план изменений на 30 / 60 / 90 дней;
-- **Паспорт цифровой зрелости** в единой админке.
+- Digital Maturity Index и простое объяснение уровня цифровой зрелости;
+- оценки внедрения, управления, исполнения задач, CRM, процессов, документооборота и автоматизации;
+- главные управленческие риски и их возможные последствия;
+- рейтинг подразделений и зоны, требующие внимания;
+- Executive Feed с ключевыми событиями и возможностями;
+- потенциальная экономия рабочего времени;
+- денежный эффект при заданном `ROI_HOURLY_COST_KZT`;
+- дорожная карта на 30 / 60 / 90 дней.
 
-Новый раздел:
+Groq использует эти данные для связного отчёта без технических терминов. В итоговом HTML/PDF появились отдельные блоки **«Цифровая зрелость»** и **«Ожидаемый эффект»**.
 
-```text
-http://SERVER_IP:8090/#intelligence
-http://SERVER_IP:8090/executive-intelligence
-```
+Перед каждым новым управленческим отчётом Executive Intelligence пересчитывается автоматически по последним доступным данным.
+
+## Основные модули
+
+- Implementation Audit;
+- Deep Audit;
+- Operational Intelligence;
+- Operational Trends 7/30/90;
+- Process Mining;
+- Business Process Audit;
+- CRM Funnel Audit;
+- Document Flow Audit;
+- System Health & Data Quality;
+- Groq AI Coach;
+- Reports & Export;
+- Management Report;
+- Executive Intelligence Suite;
+- Scheduling & Automation;
+- Developer Attribution & Brand Integrity.
 
 ## Unified Enterprise Admin
 
@@ -66,24 +81,6 @@ http://SERVER_IP:8090/admin
 #system
 #about
 ```
-
-## Основные модули
-
-- Implementation Audit;
-- Deep Audit;
-- Operational Intelligence;
-- Operational Trends 7/30/90;
-- Process Mining;
-- Business Process Audit;
-- CRM Funnel Audit;
-- Document Flow Audit;
-- System Health & Data Quality;
-- Groq AI Coach;
-- Reports & Export;
-- Management Report;
-- Executive Intelligence Suite;
-- Scheduling & Automation;
-- Developer Attribution & Brand Integrity.
 
 ## Конфигурация
 
@@ -141,11 +138,43 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "1.0.0-rc.11",
+  "version": "1.0.0-rc.12",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
+```
+
+## Management Report API
+
+Сформировать краткий отчёт:
+
+```bash
+curl -sS -X POST \
+  'http://127.0.0.1:8090/management-reports/generate?mode=short' \
+  | jq
+```
+
+Сформировать подробный отчёт:
+
+```bash
+curl -sS -X POST \
+  'http://127.0.0.1:8090/management-reports/generate?mode=detailed' \
+  | jq
+```
+
+История:
+
+```bash
+curl -sS http://127.0.0.1:8090/management-reports | jq
+```
+
+Форматы:
+
+```text
+GET /management-reports/{REPORT_ID}/html
+GET /management-reports/{REPORT_ID}/json
+GET /management-reports/{REPORT_ID}/pdf
 ```
 
 ## Executive Intelligence API
@@ -171,57 +200,7 @@ curl -sS \
 ```bash
 curl -sS \
   http://127.0.0.1:8090/executive-intelligence/latest \
-  | jq '{digital_maturity,dimensions,risks,roi,roadmap}'
-```
-
-Рейтинг подразделений:
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/executive-intelligence/latest \
-  | jq '.department_rating'
-```
-
-ROI-кандидаты:
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/executive-intelligence/latest \
-  | jq '.roi'
-```
-
-Артефакт сохраняется в:
-
-```text
-/app/artifacts/executive-intelligence/latest.json
-```
-
-При стандартном volume mapping:
-
-```text
-/opt/ai-bit/reports/ui/executive-intelligence/latest.json
-```
-
-## Management Report API
-
-```bash
-curl -sS -X POST \
-  'http://127.0.0.1:8090/management-reports/generate?mode=short' \
-  | jq
-
-curl -sS -X POST \
-  'http://127.0.0.1:8090/management-reports/generate?mode=detailed' \
-  | jq
-
-curl -sS http://127.0.0.1:8090/management-reports | jq
-```
-
-Форматы:
-
-```text
-GET /management-reports/{REPORT_ID}/html
-GET /management-reports/{REPORT_ID}/json
-GET /management-reports/{REPORT_ID}/pdf
+  | jq '{digital_maturity,dimensions,risks,department_rating,roi,roadmap}'
 ```
 
 ## Интерфейсы
@@ -241,13 +220,13 @@ http://SERVER_IP:8090/system                 System Health & Data Quality
 http://SERVER_IP:8090/about                  О системе и разработчике
 ```
 
-## Ограничения rc.11
+## Ограничения rc.12
 
+- качество отчёта зависит от свежести исходных данных;
 - Digital Maturity является прозрачной экспертной моделью AI-BIT, а не отраслевым сертификационным стандартом;
 - рейтинг подразделений зависит от доступности агрегированной статистики по отделам;
 - денежный ROI показывается только при заданном `ROI_HOURLY_COST_KZT`;
-- расчёт экономии является ориентиром для приоритизации и требует подтверждения владельцем процесса;
-- качество выводов зависит от свежести crawl, operational snapshot и Business Architecture Audit;
+- экономический эффект является ориентиром и требует подтверждения владельцем процесса;
 - AI-BIT не заменяет управленческое решение и владельцев процессов.
 
 ## Roadmap
@@ -266,6 +245,7 @@ http://SERVER_IP:8090/about                  О системе и разрабо
 - `rc.8–rc.9` — Brand Cleanup и компактный info-icon;
 - `rc.10` — Management Report без технического жаргона;
 - `rc.11` — Executive Intelligence Suite;
+- `rc.12` — интеграция Executive Intelligence в Management Report;
 - `1.0.0` — стабилизация, тесты и релизная документация;
 - `2.0` — AI Consultant, Simulation, Benchmark и Digital Twin.
 
