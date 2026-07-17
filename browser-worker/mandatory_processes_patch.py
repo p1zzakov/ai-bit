@@ -4,6 +4,7 @@ from pathlib import Path
 
 EXEC_PATH = Path('/app/executive_intelligence.py')
 DASH_PATH = Path('/app/management_report_dashboard.py')
+MANAGEMENT_PATH = Path('/app/management_report.py')
 APP_PATH = Path('/app/app.py')
 ADMIN_PATH = Path('/app/admin_dashboard.py')
 
@@ -57,6 +58,21 @@ def main() -> None:
         'mandatory capability dashboard section',
     )
     DASH_PATH.write_text(dash, encoding='utf-8')
+
+    management = MANAGEMENT_PATH.read_text(encoding='utf-8')
+    management = once(
+        management,
+        '            "source_summary": intelligence.get("source_summary", {}),\n',
+        '            "source_summary": intelligence.get("source_summary", {}),\n            "missing_capabilities": intelligence.get("missing_capabilities", []),\n',
+        'mandatory capabilities in management context',
+    )
+    management = once(
+        management,
+        'Обязательно используй блок executive_intelligence:',
+        'Обязательно перечисли все элементы executive_intelligence.missing_capabilities как не внедрённые ключевые процессы и объясни их последствия для компании. Обязательно используй блок executive_intelligence:',
+        'mandatory capabilities management prompt',
+    )
+    MANAGEMENT_PATH.write_text(management, encoding='utf-8')
 
     for path in (APP_PATH, ADMIN_PATH):
         runtime = path.read_text(encoding='utf-8')
