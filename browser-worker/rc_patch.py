@@ -17,11 +17,19 @@ def main() -> None:
     text = replace_once(
         text,
         "from ai_provider import ai_status, generate_advice",
-        "from ai_provider import ai_status, generate_advice\nfrom fastapi.responses import FileResponse\nfrom admin_dashboard import admin_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom report_engine import generate_report, list_reports, report_file\nfrom reports_dashboard import reports_dashboard_html\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
+        "from ai_provider import ai_status, generate_advice\nfrom fastapi.responses import FileResponse\nfrom admin_dashboard import admin_dashboard_html\nfrom automation_dashboard import automation_dashboard_html\nfrom business_architecture import collect_business_architecture, read_latest_business_architecture\nfrom business_architecture_dashboard import business_architecture_dashboard_html\nfrom report_engine import generate_report, list_reports, report_file\nfrom reports_dashboard import reports_dashboard_html\nfrom scheduler_engine import SchedulerService\nfrom system_dashboard import system_dashboard_html\nfrom system_health import build_system_health",
         "rc imports",
     )
-    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.5"')
-    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.5"')
+    text = text.replace('version="1.0.0-beta.2"', 'version="1.0.0-rc.6"')
+    text = text.replace('"version": "1.0.0-beta.2"', '"version": "1.0.0-rc.6"')
+
+    history_marker = 'CRAWL_HISTORY = CrawlHistory(Path("/app/artifacts/history"))\n'
+    text = replace_once(
+        text,
+        history_marker,
+        history_marker + 'SCHEDULER = SchedulerService(settings.browser_artifacts_dir)\n',
+        "scheduler service",
+    )
 
     root_marker = '''@app.get("/", response_class=HTMLResponse)
 async def executive_root() -> str:
@@ -43,6 +51,36 @@ async def process_dashboard() -> str:
     return process_dashboard_html()
 '''
     addition = marker + '''
+
+@app.on_event("startup")
+async def scheduler_startup() -> None:
+    await SCHEDULER.start()
+
+
+@app.on_event("shutdown")
+async def scheduler_shutdown() -> None:
+    await SCHEDULER.stop()
+
+
+@app.get("/automation", response_class=HTMLResponse)
+async def automation_dashboard() -> str:
+    return automation_dashboard_html()
+
+
+@app.get("/scheduler/status")
+async def scheduler_status() -> dict[str, Any]:
+    return SCHEDULER.status()
+
+
+@app.post("/scheduler/run/{job_name}")
+async def scheduler_run(job_name: str) -> dict[str, Any]:
+    try:
+        return await SCHEDULER.run(job_name, trigger="manual")
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Unknown scheduler job") from None
+    except RuntimeError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
 
 @app.get("/business-architecture", response_class=HTMLResponse)
 async def business_architecture_dashboard() -> str:
@@ -118,7 +156,7 @@ async def system_health() -> dict[str, Any]:
         settings.browser_base_url,
     )
 '''
-    text = replace_once(text, marker, addition, "business architecture reports and system endpoints")
+    text = replace_once(text, marker, addition, "automation business architecture reports and system endpoints")
 
     graph_line = '    graph = build_unified_graph(crawl, operations)\n    compact_context = {'
     graph_replacement = '''    graph = build_unified_graph(crawl, operations)
@@ -157,7 +195,7 @@ async def system_health() -> dict[str, Any]:
     text = replace_once(text, context_marker, context_addition, "AI business architecture context")
 
     APP_PATH.write_text(text, encoding="utf-8")
-    print("Applied AI-BIT Reports & Export patch 1.0.0-rc.5")
+    print("Applied AI-BIT Scheduling & Automation patch 1.0.0-rc.6")
 
 
 if __name__ == "__main__":
