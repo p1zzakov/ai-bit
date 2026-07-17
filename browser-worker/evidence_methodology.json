@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0-alpha.3",
+  "title": "AI-BIT Evidence-Based Implementation Methodology",
+  "description": "Доказательная методика оценки внедрения Bitrix24. Ручное утверждение является входным сигналом, но не заменяет проверку фактических источников.",
+  "status_rules": {
+    "implemented": "Найдены минимум два независимых положительных источника, включая источник фактического использования.",
+    "partial": "Найдена конфигурация или наименование процесса, но фактическое использование либо полный маршрут не подтверждены.",
+    "missing": "Все обязательные источники доступны и проверены, при этом подтверждений конфигурации и использования не найдено.",
+    "unknown": "Недостаточно доступных источников для доказательного вывода. Не считается отсутствием."
+  },
+  "source_catalog": {
+    "crawl": {"title": "Карта и содержимое портала", "artifact": "history", "weight": 1},
+    "business_architecture": {"title": "Бизнес-архитектура и шаблоны процессов", "artifact": "business-architecture/latest.json", "weight": 2},
+    "process_mining": {"title": "Фактические запуски и процессная активность", "artifact": "process-mining/latest.json", "weight": 3},
+    "operations": {"title": "Операционная активность пользователей", "artifact": "operations/latest.json", "weight": 2},
+    "capability_discovery": {"title": "Автоматическое обнаружение сущностей", "artifact": "capability-discovery/latest.json", "weight": 2},
+    "manual_claim": {"title": "Подтверждение владельца процесса", "artifact": null, "weight": 1}
+  },
+  "capabilities": {
+    "electronic_document_exchange": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"], "manual_claim": "not_implemented"},
+    "contract_approval": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"], "manual_claim": "not_implemented"},
+    "internal_memos": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"], "manual_claim": "not_implemented"},
+    "user_provisioning_request": {"required_sources": ["crawl", "business_architecture", "process_mining", "operations"], "usage_sources": ["process_mining", "operations"], "manual_claim": "not_implemented"},
+    "business_processes": {"required_sources": ["business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "employee_onboarding": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "employee_offboarding": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "leave_requests": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "business_trips": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "it_service_requests": {"required_sources": ["crawl", "business_architecture", "process_mining", "operations"], "usage_sources": ["process_mining", "operations"]},
+    "access_requests": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "purchase_requests": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "payment_approval": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "repair_requests": {"required_sources": ["crawl", "business_architecture", "process_mining"], "usage_sources": ["process_mining"]},
+    "knowledge_base": {"required_sources": ["crawl", "operations"], "usage_sources": ["operations"]}
+  }
+}
