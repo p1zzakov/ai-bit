@@ -27,6 +27,12 @@ def main() -> None:
     )
     executive = once(
         executive,
+        '"employees_at_risk": int(at_risk)}',
+        '"employees_at_risk": int(at_risk), "active_users": int(active_users), "users": int(active_users)}',
+        'business value active users source',
+    )
+    executive = once(
+        executive,
         '    result["management_conclusion"] = build_management_conclusion(result, artifacts_dir)\n',
         '    result["business_value"] = build_business_value(result)\n    result["management_conclusion"] = build_management_conclusion(result, artifacts_dir)\n',
         'business value result',
