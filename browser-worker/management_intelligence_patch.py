@@ -50,7 +50,7 @@ def main() -> None:
     text = once(
         text,
         '  "top_priorities": ["конкретное действие в порядке приоритета"],\n  "plan":',
-        '  "top_priorities": ["конкретное действие в порядке приоритета"],\n  "expected_effect": {"time_saving":"оценка экономии времени или недостаточно данных","financial_effect":"денежный эффект либо пояснение, что методика не задана"},\n  "plan":',
+        '  "top_priorities": ["конкретное действие в порядке приоритета"],\n  "expected_effect": {{"time_saving":"оценка экономии времени или недостаточно данных","financial_effect":"денежный эффект либо пояснение, что методика не задана"}},\n  "plan":',
         'expected effect output field',
     )
     text = once(
