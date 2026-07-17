@@ -2,63 +2,47 @@
 
 AI-BIT Enterprise — read-only платформа непрерывного технического, функционального, операционного и управленческого аудита коробочного Bitrix24.
 
-## Vision
-
-Платформа не только анализирует текущее состояние портала, но и сравнивает фактическое внедрение с эталонной моделью цифрового управления компанией.
-
-## Principles
-
-1. Только read-only работа с Bitrix24.
-2. Каждый вывод должен иметь фактическое подтверждение.
-3. Недостаток данных обозначается прямо, без домыслов.
-4. AI работает только по переданным фактам.
-5. Рекомендации содержат проблему, действие и приоритет.
-6. Оценки должны быть воспроизводимыми и объяснимыми.
-7. Авторство и контакт разработчика отображаются централизованно.
-8. Отсутствующие возможности определяются через сравнение с эталонной моделью, а не только через анализ уже существующих модулей.
-
 ## Текущая версия
 
-Browser Worker: `2.0.0-alpha.1`.
+Browser Worker: `2.0.0-alpha.3`.
 
-## Что добавлено в 2.0.0-alpha.1
+## 2.0.0-alpha.3 — Evidence-Based Audit
 
-### Reference Model Audit
-
-AI-BIT получил эталонную модель идеального внедрения для производственного предприятия. Теперь система отвечает на два разных вопроса:
+AI-BIT больше не считает ручное утверждение достаточным доказательством наличия или отсутствия процесса. Каждый вывод строится по матрице:
 
 ```text
-Что в Bitrix24 настроено неправильно?
-Чего в Bitrix24 вообще не хватает?
+требование → проверенные источники → найденные факты → статус → уверенность
 ```
 
-Reference Model Audit:
+Статусы:
 
-- инвентаризирует доступные результаты аудитов;
-- сравнивает их с перечнем рекомендуемых корпоративных возможностей;
-- разделяет статусы `implemented`, `partial`, `missing`, `unknown`;
-- рассчитывает процент покрытия эталонной модели;
-- строит оценку по направлениям;
-- выделяет критические отсутствующие процессы;
-- снижает Digital Maturity при существенных пробелах;
-- передаёт разрывы в Executive Intelligence и на страницу `#management`.
+- `implemented` — найдены независимые подтверждения конфигурации и фактического использования;
+- `partial` — найдены отдельные признаки, но полный маршрут или использование не подтверждены;
+- `missing` — все обязательные источники доступны и проверены, подтверждений не найдено;
+- `unknown` — данных недостаточно; не считается отсутствием.
 
-Первый профиль:
+Ручное подтверждение владельца процесса сохраняется как отдельный источник `manual_claim`, но не подменяет техническую проверку.
 
-```text
-Производственное предприятие
-```
+### Проверяемые источники
 
-В эталон включены задачи, CRM, бизнес-процессы, документооборот, согласование договоров, служебные записки, заявки ИТ, создание пользователей, HR-процессы, закупки, оплаты, ремонты, база знаний и управленческий контроль.
+- карта и содержимое портала;
+- Business Architecture Audit;
+- Process Mining и фактические запуски;
+- Operational Intelligence;
+- Automatic Capability Discovery;
+- подтверждение владельца процесса.
 
-Подтверждённые отсутствующие процессы:
+Для каждого процесса сохраняются:
 
-- электронный обмен документами;
-- согласование договоров;
-- заявка на создание пользователя в AD и 1С;
-- служебные записки.
+- список обязательных источников;
+- доступность каждого источника;
+- найденные совпадения;
+- источники фактического использования;
+- итоговый статус;
+- уверенность в процентах;
+- понятное обоснование вывода.
 
-Они имеют статус `missing` и отображаются как фактические разрывы целевой модели.
+На странице `#management` у разрывов эталонной модели появилась кнопка **«Показать доказательства»**.
 
 ## Главная ссылка для руководства
 
@@ -66,31 +50,24 @@ Reference Model Audit:
 http://SERVER_IP:8090/#management
 ```
 
-Ссылка не меняется. На странице автоматически отображаются:
-
-- состояние компании;
-- Digital Maturity;
-- покрытие эталонной модели;
-- количество реализованных, отсутствующих и непроверенных возможностей;
-- критические разрывы;
-- ключевые процессы, которые не внедрены;
-- риски, решения руководства, подразделения и ROI.
+Ссылка не меняется. Страница автоматически показывает Executive Brief, сравнение с эталонной моделью и доказательства по каждому существенному разрыву.
 
 ## Основные модули
 
 - Implementation Audit;
 - Deep Audit;
-- Operational Intelligence;
-- Operational Trends 7/30/90;
+- Operational Intelligence и Trends;
 - Process Mining;
 - Business Architecture Audit;
 - Executive Intelligence Suite;
 - Reference Model Audit;
-- Executive Brief;
-- Management Report;
+- Automatic Capability Discovery;
+- Evidence-Based Audit;
+- Executive Brief и Management Report;
 - Reports & Export;
 - Scheduling & Automation;
 - System Health & Data Quality;
+- Groq AI Coach;
 - Developer Attribution & Brand Integrity.
 
 ## Конфигурация
@@ -135,7 +112,7 @@ docker compose build --no-cache browser-worker
 docker compose up -d browser-worker
 ```
 
-Проверка:
+Проверка версии:
 
 ```bash
 curl -sS http://127.0.0.1:8090/health | jq
@@ -146,90 +123,71 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "2.0.0-alpha.1",
+  "version": "2.0.0-alpha.3",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
 ```
 
-## Reference Model API
+## API доказательного аудита
 
-Получить активную эталонную модель:
+Собрать доказательства:
 
 ```bash
-curl -sS http://127.0.0.1:8090/reference-model | jq
+curl -sS -X POST \
+  http://127.0.0.1:8090/evidence-audit/collect \
+  | jq
 ```
 
-Запустить сравнение:
+Последний результат:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/evidence-audit/latest \
+  | jq '{methodology,summary,capabilities}'
+```
+
+Пересчитать эталонный аудит с доказательной матрицей:
 
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/reference-audit/collect \
-  | jq
+  | jq '{profile,coverage,summary,critical_gaps,evidence_audit}'
 ```
 
-Краткая сводка:
+Проверить конкретный процесс:
 
 ```bash
 curl -sS \
-  http://127.0.0.1:8090/reference-audit/latest \
-  | jq '{profile,coverage,summary,domains,critical_gaps,requires_verification}'
+  http://127.0.0.1:8090/evidence-audit/latest \
+  | jq '.capabilities.contract_approval'
 ```
 
-Артефакт:
+Артефакты:
 
 ```text
+/app/artifacts/capability-discovery/latest.json
+/app/artifacts/evidence-audit/latest.json
 /app/artifacts/reference-audit/latest.json
 ```
 
-## Executive Intelligence API
+## Ограничения alpha.3
 
-```bash
-curl -sS -X POST \
-  http://127.0.0.1:8090/executive-intelligence/collect \
-  | jq '{digital_maturity,reference_audit,risks,missing_capabilities,roi}'
-```
-
-## Management Report API
-
-```bash
-curl -sS -X POST \
-  'http://127.0.0.1:8090/management-reports/generate?mode=detailed' \
-  | jq
-```
-
-## Интерфейсы
-
-```text
-http://SERVER_IP:8090/                       Unified Enterprise Admin
-http://SERVER_IP:8090/#management            Сводка руководителя и эталонное сравнение
-http://SERVER_IP:8090/executive-intelligence Executive Intelligence Suite
-http://SERVER_IP:8090/dashboard              Аудит внедрения
-http://SERVER_IP:8090/operations             Operational Intelligence
-http://SERVER_IP:8090/processes              Process Mining
-http://SERVER_IP:8090/business-architecture  Business Architecture Audit
-http://SERVER_IP:8090/reports-ui             Reports & Export
-http://SERVER_IP:8090/automation             Scheduling & Automation
-http://SERVER_IP:8090/system                 System Health & Data Quality
-http://SERVER_IP:8090/about                  О системе и разработчике
-```
-
-## Ограничения alpha.1
-
-- автоматическое доказательство внедрения пока работает только для возможностей, по которым есть надёжные источники данных;
-- статус `unknown` означает «требует проверки», а не «не реализовано»;
-- ручные подтверждённые требования компании имеют приоритет над эвристикой;
-- эталонная модель является методикой AI-BIT и должна расширяться отраслевыми профилями;
-- Digital Maturity и ROI являются инструментами приоритизации, а не сертификационным заключением.
+- методика AI-BIT не является официальной сертификацией Bitrix24;
+- отрицательный вывод допустим только при доступности всех обязательных источников;
+- текущий Automatic Capability Discovery использует агрегированные артефакты, поэтому часть процессов останется `unknown` до появления более детальных REST-проверок;
+- ручные сведения учитываются, но не имеют исключительного приоритета;
+- экономический эффект и Digital Maturity являются инструментами приоритизации.
 
 ## Roadmap 2.0
 
-- `2.0.0-alpha.1` — Reference Model Audit и профиль производственного предприятия;
-- `2.0.0-alpha.2` — автоматическое обнаружение смарт-процессов, шаблонов и маршрутов;
-- `2.0.0-alpha.3` — отраслевые профили и редактор эталонной модели;
-- `2.0.0-beta.1` — доказательная матрица «требование → факт → статус»;
-- `2.0.0-beta.2` — AI Consultant и целевая дорожная карта внедрения;
+- `2.0.0-alpha.1` — Reference Model Audit;
+- `2.0.0-alpha.2` — Automatic Capability Discovery;
+- `2.0.0-alpha.3` — Evidence-Based Audit;
+- `2.0.0-alpha.4` — детальные REST-проверки смарт-процессов, шаблонов, стадий и запусков;
+- `2.0.0-beta.1` — отраслевые профили и редактор эталонной модели;
+- `2.0.0-beta.2` — AI Consultant и целевая дорожная карта;
 - `2.0.0` — стабильная экспертная система цифровой трансформации.
 
 ## Разработчик
