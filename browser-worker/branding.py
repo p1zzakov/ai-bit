@@ -13,7 +13,7 @@ DEVELOPER_NAME = "Коваленко А.С."
 DEVELOPER_EMAIL = "pizzakov@gmail.com"
 COPYRIGHT_YEAR = "2026"
 BRAND_MARKER = "ai-bit-developer-attribution"
-_EXPECTED_DIGEST = "be81ec39ed0da470058a5778172206f60ec12e1ac0a7460c106550f9d58cd782"
+_EXPECTED_DIGEST = "024b9f5536e9a70f7e72f2885b55d09766ee6cc9b9a39463b901725b2f682882"
 
 
 def _canonical_payload() -> dict[str, str]:
