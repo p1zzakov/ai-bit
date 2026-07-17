@@ -4,17 +4,21 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `2.0.0-alpha.8`.
+Browser Worker: `2.0.0-alpha.9`.
 
-## 2.0.0-alpha.8 — Business Value Calculator
+## 2.0.0-alpha.9 — Advanced Business Value Engine
 
-На странице руководителя появился прозрачный расчёт бизнес-эффекта:
+Страница руководителя рассчитывает расширенный бизнес-эффект внедрения:
 
-- экономия рабочего времени;
-- денежный эквивалент рабочего времени;
-- средняя стоимость часа, использованная в расчёте;
-- ориентировочная экономия на бумаге и печати после внедрения электронного документооборота;
-- совокупный прогнозируемый эффект.
+- автоматизация повторяющихся операций;
+- бумага, печать и архивирование;
+- потери рабочего времени из-за просроченных задач;
+- дополнительный контроль задач без срока;
+- время руководителей на ручной сбор статусов;
+- время сотрудников на поиск документов;
+- ожидаемое ускорение согласований;
+- индикативная стоимость неиспользуемого потенциала Bitrix24;
+- совокупный консервативный эффект в часах и тенге.
 
 Главная ссылка остаётся прежней:
 
@@ -22,92 +26,45 @@ Browser Worker: `2.0.0-alpha.8`.
 http://SERVER_IP:8090/#management
 ```
 
-### Экономия рабочего времени
+### Принципы расчёта
 
-Финансовый эффект рассчитывается по фактическим кандидатам на автоматизацию и ставке:
+Денежные показатели используют ставку:
 
 ```env
 ROI_HOURLY_COST_KZT=4000
 ```
 
-На странице явно указывается:
-
-```text
-До 269 рабочих часов в год
-Экономия рабочего времени — ориентировочно 1 076 000 ₸ в год
-Расчёт выполнен по средней стоимости рабочего часа 4 000 ₸
-```
-
-### Экономия на бумажном документообороте
-
-Для первичной оценки используется усреднённая методика AI-BIT:
-
-- 25 печатных страниц на одного активного пользователя в месяц;
-- 15 ₸ совокупной стоимости одной страницы;
-- сокращение печати на 60% после внедрения электронного документооборота.
-
-В стоимость страницы включены:
-
-- бумага;
-- тонер и картриджи;
-- ресурс печатающей техники;
-- сопутствующие расходы на печать.
-
-Расчёт выполняется по количеству активных пользователей, полученному из Bitrix24. Результат помечается как ориентировочный и не подменяет финансово-экономическое обоснование.
-
-При необходимости средний сценарий можно изменить:
+Базовые усреднённые параметры:
 
 ```env
 PAPER_PAGES_PER_USER_MONTH=25
 PAPER_BLENDED_PAGE_COST_KZT=15
 PAPER_REDUCTION_RATE=0.60
+VALUE_OVERDUE_MINUTES_PER_TASK_MONTH=30
+VALUE_NO_DEADLINE_MINUTES_PER_TASK_MONTH=15
+VALUE_DOCUMENT_SEARCH_HOURS_USER_MONTH=0.5
+VALUE_MANAGEMENT_HOURS_DEPARTMENT_MONTH=1.5
+VALUE_APPROVAL_REDUCTION_RATE=0.50
 ```
 
-### Совокупный эффект
+Неиспользуемый потенциал и ускорение согласований показываются отдельно и не прибавляются повторно к совокупному итогу.
 
-```text
-экономия рабочего времени
-+
-экономия на бумаге и печати
-=
-совокупный прогнозируемый эффект в год
-```
-
-Результат сохраняется в:
+### Структура результата
 
 ```json
 {
   "business_value": {
     "labor": {},
     "paper": {},
+    "overdue_losses": {},
+    "no_deadline_losses": {},
+    "management_time": {},
+    "document_search": {},
+    "approvals": {},
+    "unused_potential": {},
     "total": {}
   }
 }
-```
-
-## 2.0.0-alpha.7 — Management Conclusion
-
-На странице руководителя присутствует обязательный текстовый блок **«Заключение AI-BIT»**. Он формируется встроенным Decision Engine и не зависит от Groq.
-
-Заключение отвечает на пять управленческих вопросов:
-
-- что происходит;
-- почему это происходит;
-- чем это грозит компании;
-- что необходимо утвердить руководству;
-- какой эффект ожидается после исправления.
-
-AI-BIT также ищет наиболее раннюю подтверждённую дату рабочей активности и показывает наблюдаемый срок внедрения.
-
-## 2.0.0-alpha.6 — Resilient Executive Brief
-
-Страница руководителя не зависит от Groq и не блокируется при недоступности внешнего AI-провайдера.
-
-```text
-открытие страницы
-→ мгновенный показ последнего подтверждённого Executive Intelligence snapshot
-→ фоновое обновление данных
-→ автоматическая замена сводки после успешного расчёта
 ```
 
 ## Архитектура аудита
@@ -120,7 +77,7 @@ Deep REST Evidence
 → Reference Model Audit
 → Executive Intelligence
 → Management Conclusion
-→ Business Value Calculator
+→ Advanced Business Value Engine
 → Resilient Executive Brief
 ```
 
@@ -166,10 +123,6 @@ GROQ_API_KEY=
 
 ROI_HOURLY_COST_KZT=4000
 REFERENCE_MODEL_PROFILE=manufacturing_enterprise
-
-PAPER_PAGES_PER_USER_MONTH=25
-PAPER_BLENDED_PAGE_COST_KZT=15
-PAPER_REDUCTION_RATE=0.60
 ```
 
 ## Обновление
@@ -193,7 +146,7 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "2.0.0-alpha.8",
+  "version": "2.0.0-alpha.9",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
@@ -205,23 +158,25 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
-  | jq '{management_conclusion,business_value}'
+  | jq '.business_value'
 ```
 
-Только расчёт бумаги и печати:
+Краткая сводка:
 
 ```bash
 curl -sS \
   http://127.0.0.1:8090/executive-intelligence/latest \
-  | jq '.business_value.paper'
-```
-
-Проверка ставки рабочего часа:
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/executive-intelligence/latest \
-  | jq '.business_value.labor'
+  | jq '{
+      labor: .business_value.labor,
+      paper: .business_value.paper,
+      overdue: .business_value.overdue_losses,
+      no_deadline: .business_value.no_deadline_losses,
+      management: .business_value.management_time,
+      document_search: .business_value.document_search,
+      approvals: .business_value.approvals,
+      unused_potential: .business_value.unused_potential,
+      total: .business_value.total
+    }'
 ```
 
 ## Разработчик
