@@ -17,25 +17,31 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.5`.
+Browser Worker: `1.0.0-rc.6`.
 
-## Что добавлено в rc.5
+## Что добавлено в rc.6
 
-### Reports & Export
+### Scheduling & Automation
 
-- единый управленческий отчёт по всем аналитическим контурам;
-- Executive Summary;
-- Enterprise Health и зрелость внедрения;
-- операционные показатели, просрочка и сотрудники в зоне риска;
-- Process Mining и кандидаты на автоматизацию;
-- аудит бизнес-процессов, CRM-воронок и документооборота;
-- ключевые рекомендации;
-- план действий на 30 / 60 / 90 дней;
-- экспорт в `HTML`, `JSON` и `PDF`;
-- архив сформированных отчётов;
-- вкладка **Отчёты** в Unified Enterprise Admin.
+- встроенный планировщик фоновых задач;
+- автоматический Operational snapshot;
+- автоматический Business Architecture Audit;
+- автоматический portal crawl;
+- автоматическое формирование Executive Report;
+- ручной запуск каждой задачи из интерфейса;
+- защита от параллельного повторного запуска одной задачи;
+- журнал выполнений, ошибок и длительности;
+- хранение состояния планировщика в артефактах;
+- новая вкладка **Автоматизация** в Unified Enterprise Admin;
+- настройки расписания через `.env`.
 
-PDF формируется локально внутри контейнера через Chromium/Playwright. Внешние сервисы для конвертации не используются.
+Поддерживаемые форматы расписаний:
+
+```text
+daily@HH:MM
+weekly:mon@HH:MM
+monthly:DAY@HH:MM
+```
 
 ## Unified Enterprise Admin
 
@@ -53,6 +59,7 @@ http://SERVER_IP:8090/admin
 #processes
 #architecture
 #reports
+#automation
 #system
 ```
 
@@ -68,7 +75,8 @@ http://SERVER_IP:8090/admin
 - Document Flow Audit;
 - System Health & Data Quality;
 - Groq AI Coach;
-- Reports & Export.
+- Reports & Export;
+- Scheduling & Automation.
 
 ## Конфигурация
 
@@ -81,9 +89,26 @@ BROWSER_PASSWORD=change-me
 BROWSER_HEADLESS=true
 BROWSER_TIMEOUT_MS=45000
 BROWSER_IGNORE_HTTPS_ERRORS=false
+
 AI_PROVIDER=groq
 AI_MODEL=llama-3.3-70b-versatile
 GROQ_API_KEY=
+
+SCHEDULER_ENABLED=true
+SCHEDULER_TIMEZONE=Asia/Almaty
+SCHEDULER_POLL_SECONDS=30
+
+SCHEDULER_OPERATIONS_ENABLED=true
+SCHEDULER_OPERATIONS_SCHEDULE=daily@06:00
+
+SCHEDULER_BUSINESS_ARCHITECTURE_ENABLED=true
+SCHEDULER_BUSINESS_ARCHITECTURE_SCHEDULE=weekly:mon@07:00
+
+SCHEDULER_CRAWL_ENABLED=true
+SCHEDULER_CRAWL_SCHEDULE=weekly:sun@03:00
+
+SCHEDULER_EXECUTIVE_REPORT_ENABLED=true
+SCHEDULER_EXECUTIVE_REPORT_SCHEDULE=monthly:1@08:00
 ```
 
 Webhook должен иметь read-доступ к CRM, пользователям, структуре, задачам и бизнес-процессам.
@@ -108,7 +133,7 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-rc.5"
+  "version": "1.0.0-rc.6"
 }
 ```
 
@@ -123,12 +148,43 @@ http://SERVER_IP:8090/operations             Operational Intelligence
 http://SERVER_IP:8090/processes              Process Mining
 http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 http://SERVER_IP:8090/reports-ui             Reports & Export
+http://SERVER_IP:8090/automation             Scheduling & Automation
 http://SERVER_IP:8090/system                 System Health & Data Quality
+```
+
+## Scheduling API
+
+Статус планировщика:
+
+```bash
+curl -sS http://127.0.0.1:8090/scheduler/status | jq
+```
+
+Ручной запуск задач:
+
+```bash
+curl -sS -X POST http://127.0.0.1:8090/scheduler/run/operations | jq
+curl -sS -X POST http://127.0.0.1:8090/scheduler/run/business_architecture | jq
+curl -sS -X POST http://127.0.0.1:8090/scheduler/run/crawl | jq
+curl -sS -X POST http://127.0.0.1:8090/scheduler/run/executive_report | jq
+```
+
+Артефакты планировщика:
+
+```text
+/app/artifacts/scheduler/state.json
+/app/artifacts/scheduler/history.jsonl
+```
+
+При стандартном volume mapping:
+
+```text
+/opt/ai-bit/reports/ui/scheduler/
 ```
 
 ## Reports & Export API
 
-Сформировать новый отчёт:
+Сформировать отчёт:
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
@@ -140,42 +196,12 @@ curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
 curl -sS http://127.0.0.1:8090/reports | jq
 ```
 
-Скачать конкретный отчёт:
+Скачать отчёт:
 
 ```text
 GET /reports/{REPORT_ID}/html
 GET /reports/{REPORT_ID}/json
 GET /reports/{REPORT_ID}/pdf
-```
-
-Пример:
-
-```bash
-REPORT_ID=$(curl -sS http://127.0.0.1:8090/reports | jq -r '.[0].id')
-curl -fSLo /tmp/ai-bit-report.pdf \
-  "http://127.0.0.1:8090/reports/${REPORT_ID}/pdf"
-```
-
-Артефакты сохраняются в:
-
-```text
-/app/artifacts/reports/
-```
-
-При стандартном volume mapping на сервере:
-
-```text
-/opt/ai-bit/reports/ui/reports/
-```
-
-## Подготовка актуального отчёта
-
-Перед генерацией рекомендуется обновить данные:
-
-```bash
-curl -sS -X POST http://127.0.0.1:8090/operations/collect -o /tmp/operations.json
-curl -sS -X POST http://127.0.0.1:8090/business-architecture/collect -o /tmp/business-architecture.json
-curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
 ```
 
 ## System Health API
@@ -208,10 +234,13 @@ GET  /operations
 GET  /processes
 GET  /business-architecture
 GET  /reports-ui
+GET  /automation
+GET  /system
+GET  /scheduler/status
+POST /scheduler/run/{job_name}
 GET  /reports
 POST /reports/generate
 GET  /reports/{report_id}/{format}
-GET  /system
 GET  /system/health
 POST /operations/collect
 GET  /operations/latest
@@ -224,13 +253,14 @@ GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения rc.5
+## Ограничения rc.6
 
-- отчёт использует последние сохранённые данные и не запускает все сборы автоматически;
-- качество отчёта зависит от свежести crawl, operational snapshot и Business Architecture Audit;
-- план 30/60/90 строится по приоритетам рекомендаций и требует подтверждения владельцами процессов;
-- PDF генерируется Chromium и может занимать несколько секунд;
-- внутренние панели пока загружаются в iframe внутри единой оболочки;
+- планировщик работает внутри процесса Browser Worker и требует постоянно запущенный контейнер;
+- после рестарта контейнера расписание продолжает работу, история сохраняется в volume;
+- crawl использует техническую учётную запись Browser Worker;
+- monthly-расписание поддерживает фиксированный день месяца;
+- время задаётся в `SCHEDULER_TIMEZONE`;
+- отчёт и аудит используют последние доступные данные;
 - AI не заменяет подтверждение владельцем процесса.
 
 ## Roadmap
@@ -245,4 +275,5 @@ POST /ai/advice
 - `rc.4` — Enterprise UI Refresh;
 - `rc.5` — Reports & Export;
 - `rc.6` — Scheduling & Automation;
-- `1.0.0` — стабилизация, тесты и релизная документация.
+- `1.0.0` — стабилизация, тесты и релизная документация;
+- `2.0` — Digital Maturity, AI Consultant, ROI, HeatMap и Digital Twin.
