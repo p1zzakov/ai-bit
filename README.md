@@ -4,7 +4,7 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Vision
 
-Платформа обнаруживает проблемы, показывает фактические подтверждения, объясняет причины и формирует приоритетный план цифровой трансформации на основе данных портала.
+Платформа не только анализирует текущее состояние портала, но и сравнивает фактическое внедрение с эталонной моделью цифрового управления компанией.
 
 ## Principles
 
@@ -14,40 +14,67 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 4. AI работает только по переданным фактам.
 5. Рекомендации содержат проблему, действие и приоритет.
 6. Оценки должны быть воспроизводимыми и объяснимыми.
-7. Авторство и контакт разработчика отображаются централизованно и проверяются через Brand Integrity.
+7. Авторство и контакт разработчика отображаются централизованно.
+8. Отсутствующие возможности определяются через сравнение с эталонной моделью, а не только через анализ уже существующих модулей.
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.14`.
+Browser Worker: `2.0.0-alpha.1`.
 
-## Что добавлено в rc.14
+## Что добавлено в 2.0.0-alpha.1
 
-### Executive Brief на существующей странице `#management`
+### Reference Model Audit
 
-Ранее отправленная руководству ссылка не меняется:
+AI-BIT получил эталонную модель идеального внедрения для производственного предприятия. Теперь система отвечает на два разных вопроса:
+
+```text
+Что в Bitrix24 настроено неправильно?
+Чего в Bitrix24 вообще не хватает?
+```
+
+Reference Model Audit:
+
+- инвентаризирует доступные результаты аудитов;
+- сравнивает их с перечнем рекомендуемых корпоративных возможностей;
+- разделяет статусы `implemented`, `partial`, `missing`, `unknown`;
+- рассчитывает процент покрытия эталонной модели;
+- строит оценку по направлениям;
+- выделяет критические отсутствующие процессы;
+- снижает Digital Maturity при существенных пробелах;
+- передаёт разрывы в Executive Intelligence и на страницу `#management`.
+
+Первый профиль:
+
+```text
+Производственное предприятие
+```
+
+В эталон включены задачи, CRM, бизнес-процессы, документооборот, согласование договоров, служебные записки, заявки ИТ, создание пользователей, HR-процессы, закупки, оплаты, ремонты, база знаний и управленческий контроль.
+
+Подтверждённые отсутствующие процессы:
+
+- электронный обмен документами;
+- согласование договоров;
+- заявка на создание пользователя в AD и 1С;
+- служебные записки.
+
+Они имеют статус `missing` и отображаются как фактические разрывы целевой модели.
+
+## Главная ссылка для руководства
 
 ```text
 http://SERVER_IP:8090/#management
 ```
 
-При открытии страницы система автоматически пересчитывает Executive Intelligence и сразу показывает готовую управленческую сводку. Нажимать кнопку формирования не требуется.
+Ссылка не меняется. На странице автоматически отображаются:
 
-На первом экране отображаются:
-
-- Digital Maturity Index и состояние компании;
-- доля просроченных задач;
-- количество задач без срока;
-- сотрудники в зоне риска;
-- пять главных проблем с фактами и последствиями;
-- решения, которые необходимо утвердить руководству;
-- подразделения, требующие внимания;
-- оценки ключевых направлений;
-- потенциальная экономия времени;
-- ориентировочный денежный эффект.
-
-Подробный Groq-отчёт и история PDF сохранены во вторичном раскрывающемся блоке. Они больше не мешают главной управленческой сводке.
-
-Страница автоматически обновляется при открытии и затем каждые пять минут.
+- состояние компании;
+- Digital Maturity;
+- покрытие эталонной модели;
+- количество реализованных, отсутствующих и непроверенных возможностей;
+- критические разрывы;
+- ключевые процессы, которые не внедрены;
+- риски, решения руководства, подразделения и ROI.
 
 ## Основные модули
 
@@ -56,39 +83,15 @@ http://SERVER_IP:8090/#management
 - Operational Intelligence;
 - Operational Trends 7/30/90;
 - Process Mining;
-- Business Process Audit;
-- CRM Funnel Audit;
-- Document Flow Audit;
-- System Health & Data Quality;
-- Groq AI Coach;
-- Reports & Export;
-- Management Report;
+- Business Architecture Audit;
 - Executive Intelligence Suite;
+- Reference Model Audit;
+- Executive Brief;
+- Management Report;
+- Reports & Export;
 - Scheduling & Automation;
+- System Health & Data Quality;
 - Developer Attribution & Brand Integrity.
-
-## Unified Enterprise Admin
-
-```text
-http://SERVER_IP:8090/
-http://SERVER_IP:8090/admin
-```
-
-Разделы:
-
-```text
-#executive
-#implementation
-#operations
-#processes
-#architecture
-#reports
-#management
-#intelligence
-#automation
-#system
-#about
-```
 
 ## Конфигурация
 
@@ -106,9 +109,8 @@ AI_PROVIDER=groq
 AI_MODEL=llama-3.3-70b-versatile
 GROQ_API_KEY=
 
-# Средняя полная стоимость рабочего часа для денежного ROI.
-# Оставить 0, пока методика не утверждена руководством.
 ROI_HOURLY_COST_KZT=0
+REFERENCE_MODEL_PROFILE=manufacturing_enterprise
 
 SCHEDULER_ENABLED=true
 SCHEDULER_TIMEZONE=Asia/Almaty
@@ -122,8 +124,6 @@ SCHEDULER_CRAWL_SCHEDULE=weekly:sun@03:00
 SCHEDULER_EXECUTIVE_REPORT_ENABLED=true
 SCHEDULER_EXECUTIVE_REPORT_SCHEDULE=monthly:1@08:00
 ```
-
-Денежный ROI не показывается, пока `ROI_HOURLY_COST_KZT` равен `0`. Потенциал экономии времени рассчитывается независимо.
 
 ## Развёртывание
 
@@ -146,57 +146,41 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "1.0.0-rc.14",
+  "version": "2.0.0-alpha.1",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
 ```
 
-## Executive Brief
+## Reference Model API
 
-Главная ссылка для руководства:
+Получить активную эталонную модель:
 
-```text
-http://SERVER_IP:8090/#management
+```bash
+curl -sS http://127.0.0.1:8090/reference-model | jq
 ```
 
-Прямой адрес внутреннего модуля:
-
-```text
-http://SERVER_IP:8090/management-report
-```
-
-Ручная проверка данных Executive Intelligence:
+Запустить сравнение:
 
 ```bash
 curl -sS -X POST \
-  http://127.0.0.1:8090/executive-intelligence/collect \
-  | jq '{digital_maturity,source_summary,risks,department_rating,roi}'
-```
-
-## Management Report API
-
-Подробный отчёт остаётся доступным как приложение:
-
-```bash
-curl -sS -X POST \
-  'http://127.0.0.1:8090/management-reports/generate?mode=detailed' \
+  http://127.0.0.1:8090/reference-audit/collect \
   | jq
 ```
 
-История:
+Краткая сводка:
 
 ```bash
-curl -sS http://127.0.0.1:8090/management-reports | jq
+curl -sS \
+  http://127.0.0.1:8090/reference-audit/latest \
+  | jq '{profile,coverage,summary,domains,critical_gaps,requires_verification}'
 ```
 
-Форматы:
+Артефакт:
 
 ```text
-GET /management-reports/{REPORT_ID}/html
-GET /management-reports/{REPORT_ID}/json
-GET /management-reports/{REPORT_ID}/pdf
+/app/artifacts/reference-audit/latest.json
 ```
 
 ## Executive Intelligence API
@@ -204,10 +188,14 @@ GET /management-reports/{REPORT_ID}/pdf
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
-  | jq
+  | jq '{digital_maturity,reference_audit,risks,missing_capabilities,roi}'
+```
 
-curl -sS \
-  http://127.0.0.1:8090/executive-intelligence/latest \
+## Management Report API
+
+```bash
+curl -sS -X POST \
+  'http://127.0.0.1:8090/management-reports/generate?mode=detailed' \
   | jq
 ```
 
@@ -215,50 +203,34 @@ curl -sS \
 
 ```text
 http://SERVER_IP:8090/                       Unified Enterprise Admin
-http://SERVER_IP:8090/executive              Executive Dashboard и AI Coach
-http://SERVER_IP:8090/executive-intelligence Паспорт цифровой зрелости и Risk Center
+http://SERVER_IP:8090/#management            Сводка руководителя и эталонное сравнение
+http://SERVER_IP:8090/executive-intelligence Executive Intelligence Suite
 http://SERVER_IP:8090/dashboard              Аудит внедрения
 http://SERVER_IP:8090/operations             Operational Intelligence
 http://SERVER_IP:8090/processes              Process Mining
 http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 http://SERVER_IP:8090/reports-ui             Reports & Export
-http://SERVER_IP:8090/management-report      Автоматическая сводка руководителя
 http://SERVER_IP:8090/automation             Scheduling & Automation
 http://SERVER_IP:8090/system                 System Health & Data Quality
 http://SERVER_IP:8090/about                  О системе и разработчике
 ```
 
-## Ограничения rc.14
+## Ограничения alpha.1
 
-- сводка строится по последним доступным данным аудитов;
-- Digital Maturity является прозрачной экспертной моделью AI-BIT, а не отраслевым сертификационным стандартом;
-- рейтинг подразделений зависит от доступности агрегированной статистики по отделам;
-- денежный ROI показывается только при заданном `ROI_HOURLY_COST_KZT`;
-- экономический эффект является ориентиром и требует подтверждения владельцем процесса;
-- подробный Groq-отчёт остаётся приложением, а не главным экраном;
-- AI-BIT не заменяет управленческое решение и владельцев процессов.
+- автоматическое доказательство внедрения пока работает только для возможностей, по которым есть надёжные источники данных;
+- статус `unknown` означает «требует проверки», а не «не реализовано»;
+- ручные подтверждённые требования компании имеют приоритет над эвристикой;
+- эталонная модель является методикой AI-BIT и должна расширяться отраслевыми профилями;
+- Digital Maturity и ROI являются инструментами приоритизации, а не сертификационным заключением.
 
-## Roadmap
+## Roadmap 2.0
 
-- `alpha.1` — Unified Knowledge Graph и AI Provider Layer;
-- `alpha.2` — динамика 7/30/90 дней;
-- `beta.1` — Executive Dashboard и AI Coach;
-- `beta.2` — Process Mining;
-- `rc.1` — Business Process, CRM Funnel и Document Flow Audit;
-- `rc.2` — Unified Enterprise Admin;
-- `rc.3` — System Health & Data Quality;
-- `rc.4` — Enterprise UI Refresh;
-- `rc.5` — Reports & Export;
-- `rc.6` — Scheduling & Automation;
-- `rc.7` — Developer Attribution & Brand Integrity;
-- `rc.8–rc.9` — Brand Cleanup и компактный info-icon;
-- `rc.10` — Management Report без технического жаргона;
-- `rc.11` — Executive Intelligence Suite;
-- `rc.12` — интеграция Executive Intelligence в Management Report;
-- `rc.13` — обязательный фактический Executive Intelligence блок в Management Report;
-- `rc.14` — автоматическая Executive Brief на существующей странице `#management`;
-- `1.0.0` — стабилизация, тесты и релизная документация;
-- `2.0` — AI Consultant, Simulation, Benchmark и Digital Twin.
+- `2.0.0-alpha.1` — Reference Model Audit и профиль производственного предприятия;
+- `2.0.0-alpha.2` — автоматическое обнаружение смарт-процессов, шаблонов и маршрутов;
+- `2.0.0-alpha.3` — отраслевые профили и редактор эталонной модели;
+- `2.0.0-beta.1` — доказательная матрица «требование → факт → статус»;
+- `2.0.0-beta.2` — AI Consultant и целевая дорожная карта внедрения;
+- `2.0.0` — стабильная экспертная система цифровой трансформации.
 
 ## Разработчик
 
