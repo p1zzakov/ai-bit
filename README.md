@@ -4,7 +4,69 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `2.0.0-alpha.9`.
+Browser Worker: `2.0.0-alpha.10`.
+
+## 2.0.0-alpha.10 — Executive KPI Center + Root Cause Analysis
+
+На странице руководителя появился отдельный управленческий слой:
+
+- общий индекс цифровизации;
+- зрелость внедрения;
+- эффективность использования;
+- управленческая дисциплина;
+- исполнительская дисциплина;
+- автоматизация;
+- качество CRM;
+- зрелость документооборота.
+
+Каждый KPI рассчитывается встроенным Decision Engine на основании фактических данных AI-BIT и получает статус:
+
+- `good` — управляемый уровень;
+- `attention` — требуется улучшение;
+- `critical` — требуется управленческое вмешательство.
+
+### Root Cause Analysis
+
+Система не ограничивается фиксацией отклонения. Для каждой существенной проблемы формируются:
+
+```text
+Факт
+→ корневая причина
+→ влияние на бизнес
+→ рекомендуемое действие
+→ уверенность вывода
+```
+
+Примеры анализируемых причин:
+
+- просроченные задачи;
+- задачи без крайнего срока;
+- неполное покрытие эталонной модели;
+- недостаточная автоматизация;
+- слабое качество CRM;
+- незрелый документооборот;
+- перегрузка отдельных сотрудников.
+
+Groq не участвует в расчёте KPI и причин. Выводы формируются детерминированно по подтверждённым данным.
+
+Результат сохраняется в Executive Intelligence:
+
+```json
+{
+  "executive_kpi": {
+    "kpis": [],
+    "root_causes": [],
+    "priority_actions": [],
+    "summary": {}
+  }
+}
+```
+
+Главная ссылка остаётся прежней:
+
+```text
+http://SERVER_IP:8090/#management
+```
 
 ## 2.0.0-alpha.9 — Advanced Business Value Engine
 
@@ -19,12 +81,6 @@ Browser Worker: `2.0.0-alpha.9`.
 - ожидаемое ускорение согласований;
 - индикативная стоимость неиспользуемого потенциала Bitrix24;
 - совокупный консервативный эффект в часах и тенге.
-
-Главная ссылка остаётся прежней:
-
-```text
-http://SERVER_IP:8090/#management
-```
 
 ### Принципы расчёта
 
@@ -49,24 +105,6 @@ VALUE_APPROVAL_REDUCTION_RATE=0.50
 
 Неиспользуемый потенциал и ускорение согласований показываются отдельно и не прибавляются повторно к совокупному итогу.
 
-### Структура результата
-
-```json
-{
-  "business_value": {
-    "labor": {},
-    "paper": {},
-    "overdue_losses": {},
-    "no_deadline_losses": {},
-    "management_time": {},
-    "document_search": {},
-    "approvals": {},
-    "unused_potential": {},
-    "total": {}
-  }
-}
-```
-
 ## Архитектура аудита
 
 ```text
@@ -78,6 +116,8 @@ Deep REST Evidence
 → Executive Intelligence
 → Management Conclusion
 → Advanced Business Value Engine
+→ Executive KPI Center
+→ Root Cause Analysis
 → Resilient Executive Brief
 ```
 
@@ -146,19 +186,19 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "2.0.0-alpha.9",
+  "version": "2.0.0-alpha.10",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
 ```
 
-## Проверка бизнес-эффекта
+## Проверка Executive KPI
 
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
-  | jq '.business_value'
+  | jq '.executive_kpi'
 ```
 
 Краткая сводка:
@@ -167,15 +207,10 @@ curl -sS -X POST \
 curl -sS \
   http://127.0.0.1:8090/executive-intelligence/latest \
   | jq '{
-      labor: .business_value.labor,
-      paper: .business_value.paper,
-      overdue: .business_value.overdue_losses,
-      no_deadline: .business_value.no_deadline_losses,
-      management: .business_value.management_time,
-      document_search: .business_value.document_search,
-      approvals: .business_value.approvals,
-      unused_potential: .business_value.unused_potential,
-      total: .business_value.total
+      kpis: .executive_kpi.kpis,
+      root_causes: .executive_kpi.root_causes,
+      priority_actions: .executive_kpi.priority_actions,
+      summary: .executive_kpi.summary
     }'
 ```
 
