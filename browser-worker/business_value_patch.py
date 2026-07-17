@@ -88,18 +88,14 @@ def main() -> None:
         " const c=d.management_conclusion||{},bv=d.business_value||{},labor=bv.labor||{},paper=bv.paper||{},total=bv.total||{};if(!c.status)return '';\n",
         'dashboard business value vars',
     )
-    dashboard = once(
-        dashboard,
-        "'<div class=\"decision\"><b>Ожидаемый эффект</b><span>'+esc(c.expected_effect||'требует расчёта')+'</span></div></div></div></section>';",
-        "'<div class=\"decision\"><b>Ожидаемый эффект</b><span>'+esc(c.expected_effect||'требует расчёта')+'</span>'+(labor.hourly_rate_kzt?'<p class=\"status\">Расчёт рабочего времени выполнен по средней стоимости часа '+money(labor.hourly_rate_kzt)+'.</p>':'')+(paper.annual_saving_kzt?'<p><b>Экономия на бумажном документообороте:</b> '+money(paper.annual_saving_kzt)+' в год.</p><p class=\"status\">'+esc(paper.calculation_note||'Использован усреднённый сценарий AI-BIT.')+'</p>':'')+(total.annual_saving_kzt?'<p><b>Совокупный прогнозируемый эффект:</b> '+money(total.annual_saving_kzt)+' в год.</p>':'')+(bv.disclaimer?'<p class=\"status\">'+esc(bv.disclaimer)+'</p>':'')+'</div></div></div></section>';",
-        'dashboard business value conclusion',
-    )
-    dashboard = once(
-        dashboard,
-        "<div class=\"roi\"><div class=\"box\"><span>Экономия времени</span><br><strong>'+esc(num(roi.total_annual_hours))+'</strong><br><small>часов в год</small></div><div class=\"box\"><span>Экономический эффект</span><br><strong>'+esc(money(roi.total_annual_saving_kzt))+'</strong><br><small>ориентир в год</small></div></div>",
-        "<div class=\"roi\"><div class=\"box\"><span>Экономия времени</span><br><strong>'+esc(num(roi.total_annual_hours))+'</strong><br><small>часов в год</small></div><div class=\"box\"><span>Экономия рабочего времени</span><br><strong>'+esc(money(labor.annual_saving_kzt||roi.total_annual_saving_kzt))+'</strong><br><small>'+(labor.hourly_rate_kzt?'при '+money(labor.hourly_rate_kzt)+' за час':'ставка часа не задана')+'</small></div><div class=\"box\"><span>Бумага и печать</span><br><strong>'+esc(money(paper.annual_saving_kzt))+'</strong><br><small>усреднённый прогноз в год</small></div><div class=\"box\"><span>Совокупный эффект</span><br><strong>'+esc(money(total.annual_saving_kzt))+'</strong><br><small>ориентировочно в год</small></div></div>",
-        'dashboard business value cards',
-    )
+
+    old_conclusion = '<div class="decision"><b>Ожидаемый эффект</b><span>\'+esc(c.expected_effect||\'требует расчёта\')+\'</span></div>'
+    new_conclusion = '<div class="decision"><b>Ожидаемый эффект</b><span>\'+esc(c.expected_effect||\'требует расчёта\')+\'</span>\'+(labor.hourly_rate_kzt?\'<p class="status">Расчёт рабочего времени выполнен по средней стоимости часа \'+money(labor.hourly_rate_kzt)+\'.</p>\':\'\')+(paper.annual_saving_kzt?\'<p><b>Экономия на бумажном документообороте:</b> \'+money(paper.annual_saving_kzt)+\' в год.</p><p class="status">\'+esc(paper.calculation_note||\'Использован усреднённый сценарий AI-BIT.\')+\'</p>\':\'\')+(total.annual_saving_kzt?\'<p><b>Совокупный прогнозируемый эффект:</b> \'+money(total.annual_saving_kzt)+\' в год.</p>\':\'\')+(bv.disclaimer?\'<p class="status">\'+esc(bv.disclaimer)+\'</p>\':\'\')+\'</div>'
+    dashboard = once(dashboard, old_conclusion, new_conclusion, 'dashboard business value conclusion')
+
+    old_cards = "<div class=\"roi\"><div class=\"box\"><span>Экономия времени</span><br><strong>'+esc(num(roi.total_annual_hours))+'</strong><br><small>часов в год</small></div><div class=\"box\"><span>Экономический эффект</span><br><strong>'+esc(money(roi.total_annual_saving_kzt))+'</strong><br><small>ориентир в год</small></div></div>"
+    new_cards = "<div class=\"roi\"><div class=\"box\"><span>Экономия времени</span><br><strong>'+esc(num(roi.total_annual_hours))+'</strong><br><small>часов в год</small></div><div class=\"box\"><span>Экономия рабочего времени</span><br><strong>'+esc(money(labor.annual_saving_kzt||roi.total_annual_saving_kzt))+'</strong><br><small>'+(labor.hourly_rate_kzt?'при '+money(labor.hourly_rate_kzt)+' за час':'ставка часа не задана')+'</small></div><div class=\"box\"><span>Бумага и печать</span><br><strong>'+esc(money(paper.annual_saving_kzt))+'</strong><br><small>усреднённый прогноз в год</small></div><div class=\"box\"><span>Совокупный эффект</span><br><strong>'+esc(money(total.annual_saving_kzt))+'</strong><br><small>ориентировочно в год</small></div></div>"
+    dashboard = once(dashboard, old_cards, new_cards, 'dashboard business value cards')
     DASH_PATH.write_text(dashboard, encoding='utf-8')
 
     for path in (APP_PATH, ADMIN_PATH, REF_PATH):
