@@ -18,28 +18,36 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.13`.
+Browser Worker: `1.0.0-rc.14`.
 
-## Что добавлено в rc.13
+## Что добавлено в rc.14
 
-### Детерминированный Executive Intelligence в отчёте для руководства
+### Executive Brief на существующей странице `#management`
 
-Executive Intelligence теперь включается в Management Report двумя независимыми способами:
+Ранее отправленная руководству ссылка не меняется:
 
-1. Groq использует данные цифровой зрелости, рисков, подразделений, ROI и дорожной карты для связного управленческого заключения.
-2. HTML/PDF/JSON содержат обязательный фактический блок, который формируется напрямую из Executive Intelligence и не зависит от формулировок Groq.
+```text
+http://SERVER_IP:8090/#management
+```
 
-В отчёте гарантированно отображаются:
+При открытии страницы система автоматически пересчитывает Executive Intelligence и сразу показывает готовую управленческую сводку. Нажимать кнопку формирования не требуется.
 
-- точный Digital Maturity Index, уровень и рейтинг;
-- оценки внедрения, управления, исполнения задач, процессов, CRM, документооборота и автоматизации;
-- ключевые управленческие риски с фактами и последствиями;
+На первом экране отображаются:
+
+- Digital Maturity Index и состояние компании;
+- доля просроченных задач;
+- количество задач без срока;
+- сотрудники в зоне риска;
+- пять главных проблем с фактами и последствиями;
+- решения, которые необходимо утвердить руководству;
 - подразделения, требующие внимания;
-- потенциальная экономия рабочего времени;
-- ориентировочный денежный эффект при заданном `ROI_HOURLY_COST_KZT`;
-- дорожная карта на 30 / 60 / 90 дней.
+- оценки ключевых направлений;
+- потенциальная экономия времени;
+- ориентировочный денежный эффект.
 
-Каждый сформированный JSON-отчёт сохраняет `executive_intelligence_snapshot`, использованный при генерации. Это позволяет проверить происхождение управленческих показателей.
+Подробный Groq-отчёт и история PDF сохранены во вторичном раскрывающемся блоке. Они больше не мешают главной управленческой сводке.
+
+Страница автоматически обновляется при открытии и затем каждые пять минут.
 
 ## Основные модули
 
@@ -138,24 +146,38 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "1.0.0-rc.13",
+  "version": "1.0.0-rc.14",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
 ```
 
-## Management Report API
+## Executive Brief
 
-Сформировать краткий отчёт:
+Главная ссылка для руководства:
+
+```text
+http://SERVER_IP:8090/#management
+```
+
+Прямой адрес внутреннего модуля:
+
+```text
+http://SERVER_IP:8090/management-report
+```
+
+Ручная проверка данных Executive Intelligence:
 
 ```bash
 curl -sS -X POST \
-  'http://127.0.0.1:8090/management-reports/generate?mode=short' \
-  | jq
+  http://127.0.0.1:8090/executive-intelligence/collect \
+  | jq '{digital_maturity,source_summary,risks,department_rating,roi}'
 ```
 
-Сформировать подробный отчёт:
+## Management Report API
+
+Подробный отчёт остаётся доступным как приложение:
 
 ```bash
 curl -sS -X POST \
@@ -177,38 +199,16 @@ GET /management-reports/{REPORT_ID}/json
 GET /management-reports/{REPORT_ID}/pdf
 ```
 
-Проверить сохранённый Executive Intelligence snapshot:
-
-```bash
-REPORT_ID=$(curl -sS http://127.0.0.1:8090/management-reports | jq -r '.[0].id')
-curl -sS "http://127.0.0.1:8090/management-reports/${REPORT_ID}/json" \
-  | jq '.executive_intelligence_snapshot | {digital_maturity,dimensions,risks,department_rating,roi,roadmap}'
-```
-
 ## Executive Intelligence API
-
-Пересчитать показатели:
 
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
   | jq
-```
 
-Последний расчёт:
-
-```bash
 curl -sS \
   http://127.0.0.1:8090/executive-intelligence/latest \
   | jq
-```
-
-Краткая сводка:
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/executive-intelligence/latest \
-  | jq '{digital_maturity,dimensions,risks,department_rating,roi,roadmap}'
 ```
 
 ## Интерфейсы
@@ -222,20 +222,20 @@ http://SERVER_IP:8090/operations             Operational Intelligence
 http://SERVER_IP:8090/processes              Process Mining
 http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 http://SERVER_IP:8090/reports-ui             Reports & Export
-http://SERVER_IP:8090/management-report      Отчёт для руководства
+http://SERVER_IP:8090/management-report      Автоматическая сводка руководителя
 http://SERVER_IP:8090/automation             Scheduling & Automation
 http://SERVER_IP:8090/system                 System Health & Data Quality
 http://SERVER_IP:8090/about                  О системе и разработчике
 ```
 
-## Ограничения rc.13
+## Ограничения rc.14
 
-- качество текстового заключения зависит от свежести исходных данных;
-- обязательный Executive Intelligence блок выводится независимо от качества ответа Groq;
+- сводка строится по последним доступным данным аудитов;
 - Digital Maturity является прозрачной экспертной моделью AI-BIT, а не отраслевым сертификационным стандартом;
 - рейтинг подразделений зависит от доступности агрегированной статистики по отделам;
 - денежный ROI показывается только при заданном `ROI_HOURLY_COST_KZT`;
 - экономический эффект является ориентиром и требует подтверждения владельцем процесса;
+- подробный Groq-отчёт остаётся приложением, а не главным экраном;
 - AI-BIT не заменяет управленческое решение и владельцев процессов.
 
 ## Roadmap
@@ -256,6 +256,7 @@ http://SERVER_IP:8090/about                  О системе и разрабо
 - `rc.11` — Executive Intelligence Suite;
 - `rc.12` — интеграция Executive Intelligence в Management Report;
 - `rc.13` — обязательный фактический Executive Intelligence блок в Management Report;
+- `rc.14` — автоматическая Executive Brief на существующей странице `#management`;
 - `1.0.0` — стабилизация, тесты и релизная документация;
 - `2.0` — AI Consultant, Simulation, Benchmark и Digital Twin.
 
