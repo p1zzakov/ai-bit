@@ -18,12 +18,7 @@ def once(text: str, old: str, new: str, label: str) -> str:
 def main() -> None:
     ref = REF_PATH.read_text(encoding='utf-8')
     ref = ref.replace('VERSION = "2.0.0-alpha.1"', 'VERSION = "2.0.0-alpha.2"')
-    ref = once(
-        ref,
-        'from typing import Any\n',
-        'from typing import Any\n\nfrom capability_discovery import discover_capabilities\n',
-        'capability discovery import',
-    )
+    ref = once(ref, 'from typing import Any\n', 'from typing import Any\n\nfrom capability_discovery import discover_capabilities\n', 'capability discovery import')
     ref = once(
         ref,
         '    reference = load_reference_model(profile)\n    operations = _read(artifacts_dir / "operations" / "latest.json")',
@@ -53,30 +48,15 @@ def main() -> None:
         '            if evidence_found:\n                status = "implemented"\n                confidence = max(confidence, 0.85)\n            else:\n                status = "unknown"\n                confidence = max(confidence, 0.2)',
         'evidence confidence',
     )
-    ref = once(
-        ref,
-        '            "status": status,\n            "evidence": evidence_found,',
-        '            "status": status,\n            "evidence": evidence_found,\n            "source": source,\n            "confidence": round(confidence, 2),',
-        'capability source metadata',
-    )
-    ref = once(
-        ref,
-        '        "requires_verification": unknown[:15],\n    }',
-        '        "requires_verification": unknown[:15],\n        "automatic_discovery": discovery.get("summary", {}),\n    }',
-        'discovery summary result',
-    )
+    ref = once(ref, '            "status": status,\n            "evidence": evidence_found,', '            "status": status,\n            "evidence": evidence_found,\n            "source": source,\n            "confidence": round(confidence, 2),', 'capability source metadata')
+    ref = once(ref, '        "requires_verification": unknown[:15],\n    }', '        "requires_verification": unknown[:15],\n        "automatic_discovery": discovery.get("summary", {}),\n    }', 'discovery summary result')
     REF_PATH.write_text(ref, encoding='utf-8')
 
     app = APP_PATH.read_text(encoding='utf-8')
-    app = once(
-        app,
-        'from reference_model import build_reference_audit, load_reference_model, read_latest_reference_audit',
-        'from reference_model import build_reference_audit, load_reference_model, read_latest_reference_audit\nfrom capability_discovery import discover_capabilities, read_latest_capability_discovery',
-        'app discovery imports',
-    )
+    app = once(app, 'from reference_model import build_reference_audit, load_reference_model, read_latest_reference_audit', 'from reference_model import build_reference_audit, load_reference_model, read_latest_reference_audit\nfrom capability_discovery import discover_capabilities, read_latest_capability_discovery', 'app discovery imports')
     marker = '''@app.post("/reference-audit/collect")
-async def reference_audit_collect() -> dict[str, Any]:
-    return build_reference_audit(settings.browser_artifacts_dir)
+async def reference_audit_collect(profile: str | None = None) -> dict[str, Any]:
+    return build_reference_audit(settings.browser_artifacts_dir, profile=profile)
 '''
     addition = marker + '''
 
@@ -97,8 +77,7 @@ async def capability_discovery_latest() -> dict[str, Any]:
     APP_PATH.write_text(app, encoding='utf-8')
 
     for path in (EXEC_PATH, ADMIN_PATH):
-        text = path.read_text(encoding='utf-8')
-        text = text.replace('2.0.0-alpha.1', '2.0.0-alpha.2')
+        text = path.read_text(encoding='utf-8').replace('2.0.0-alpha.1', '2.0.0-alpha.2')
         path.write_text(text, encoding='utf-8')
 
     print('Applied AI-BIT Automatic Capability Discovery 2.0.0-alpha.2')
