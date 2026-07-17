@@ -18,28 +18,28 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.12`.
+Browser Worker: `1.0.0-rc.13`.
 
-## Что добавлено в rc.12
+## Что добавлено в rc.13
 
-### Management Report + Executive Intelligence
+### Детерминированный Executive Intelligence в отчёте для руководства
 
-При формировании страницы **«Отчёт для руководства»** система теперь автоматически пересчитывает и передаёт Groq данные из Executive Intelligence Suite.
+Executive Intelligence теперь включается в Management Report двумя независимыми способами:
 
-В управленческий отчёт включаются:
+1. Groq использует данные цифровой зрелости, рисков, подразделений, ROI и дорожной карты для связного управленческого заключения.
+2. HTML/PDF/JSON содержат обязательный фактический блок, который формируется напрямую из Executive Intelligence и не зависит от формулировок Groq.
 
-- Digital Maturity Index и простое объяснение уровня цифровой зрелости;
-- оценки внедрения, управления, исполнения задач, CRM, процессов, документооборота и автоматизации;
-- главные управленческие риски и их возможные последствия;
-- рейтинг подразделений и зоны, требующие внимания;
-- Executive Feed с ключевыми событиями и возможностями;
+В отчёте гарантированно отображаются:
+
+- точный Digital Maturity Index, уровень и рейтинг;
+- оценки внедрения, управления, исполнения задач, процессов, CRM, документооборота и автоматизации;
+- ключевые управленческие риски с фактами и последствиями;
+- подразделения, требующие внимания;
 - потенциальная экономия рабочего времени;
-- денежный эффект при заданном `ROI_HOURLY_COST_KZT`;
+- ориентировочный денежный эффект при заданном `ROI_HOURLY_COST_KZT`;
 - дорожная карта на 30 / 60 / 90 дней.
 
-Groq использует эти данные для связного отчёта без технических терминов. В итоговом HTML/PDF появились отдельные блоки **«Цифровая зрелость»** и **«Ожидаемый эффект»**.
-
-Перед каждым новым управленческим отчётом Executive Intelligence пересчитывается автоматически по последним доступным данным.
+Каждый сформированный JSON-отчёт сохраняет `executive_intelligence_snapshot`, использованный при генерации. Это позволяет проверить происхождение управленческих показателей.
 
 ## Основные модули
 
@@ -138,7 +138,7 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "1.0.0-rc.12",
+  "version": "1.0.0-rc.13",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
@@ -175,6 +175,14 @@ curl -sS http://127.0.0.1:8090/management-reports | jq
 GET /management-reports/{REPORT_ID}/html
 GET /management-reports/{REPORT_ID}/json
 GET /management-reports/{REPORT_ID}/pdf
+```
+
+Проверить сохранённый Executive Intelligence snapshot:
+
+```bash
+REPORT_ID=$(curl -sS http://127.0.0.1:8090/management-reports | jq -r '.[0].id')
+curl -sS "http://127.0.0.1:8090/management-reports/${REPORT_ID}/json" \
+  | jq '.executive_intelligence_snapshot | {digital_maturity,dimensions,risks,department_rating,roi,roadmap}'
 ```
 
 ## Executive Intelligence API
@@ -220,9 +228,10 @@ http://SERVER_IP:8090/system                 System Health & Data Quality
 http://SERVER_IP:8090/about                  О системе и разработчике
 ```
 
-## Ограничения rc.12
+## Ограничения rc.13
 
-- качество отчёта зависит от свежести исходных данных;
+- качество текстового заключения зависит от свежести исходных данных;
+- обязательный Executive Intelligence блок выводится независимо от качества ответа Groq;
 - Digital Maturity является прозрачной экспертной моделью AI-BIT, а не отраслевым сертификационным стандартом;
 - рейтинг подразделений зависит от доступности агрегированной статистики по отделам;
 - денежный ROI показывается только при заданном `ROI_HOURLY_COST_KZT`;
@@ -246,6 +255,7 @@ http://SERVER_IP:8090/about                  О системе и разрабо
 - `rc.10` — Management Report без технического жаргона;
 - `rc.11` — Executive Intelligence Suite;
 - `rc.12` — интеграция Executive Intelligence в Management Report;
+- `rc.13` — обязательный фактический Executive Intelligence блок в Management Report;
 - `1.0.0` — стабилизация, тесты и релизная документация;
 - `2.0` — AI Consultant, Simulation, Benchmark и Digital Twin.
 
