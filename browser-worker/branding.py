@@ -77,6 +77,8 @@ def inject_attribution(html: str) -> str:
 
 
 def _should_skip_injection(request: Request) -> bool:
+    if request.query_params.get("embedded") == "1":
+        return True
     if request.headers.get("sec-fetch-dest", "").lower() == "iframe":
         return True
     path = request.url.path
