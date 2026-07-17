@@ -4,61 +4,59 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `2.0.0-alpha.10`.
+Browser Worker: `2.0.0-alpha.14`.
 
-## 2.0.0-alpha.10 — Executive KPI Center + Root Cause Analysis
+## 2.0.0-alpha.11–alpha.14 — Transformation Intelligence
 
-На странице руководителя появился отдельный управленческий слой:
+На странице руководителя добавлен единый контур управления изменениями.
 
-- общий индекс цифровизации;
-- зрелость внедрения;
-- эффективность использования;
-- управленческая дисциплина;
-- исполнительская дисциплина;
-- автоматизация;
-- качество CRM;
-- зрелость документооборота.
+### alpha.11 — Roadmap Generator
 
-Каждый KPI рассчитывается встроенным Decision Engine на основании фактических данных AI-BIT и получает статус:
+Система преобразует подтверждённые корневые причины и разрывы эталонной модели в дорожную карту на 90 дней:
 
-- `good` — управляемый уровень;
-- `attention` — требуется улучшение;
-- `critical` — требуется управленческое вмешательство.
+- стабилизация управления — 1–2 недели;
+- завершение ключевых процессов — 3–6 недель;
+- масштабирование и оптимизация — 7–12 недель.
 
-### Root Cause Analysis
+Для каждого пункта указываются причина, действие, роль ответственного, критерий завершения и уверенность вывода.
 
-Система не ограничивается фиксацией отклонения. Для каждой существенной проблемы формируются:
+### alpha.12 — Executive Timeline
+
+История строится только по сохранённым снимкам Executive Intelligence. Отображаются:
+
+- цифровая зрелость;
+- покрытие эталонной модели;
+- просрочка;
+- количество задач без срока;
+- изменение показателей относительно первого доступного снимка.
+
+### alpha.13 — Evidence-Based Risk Forecast
+
+Прогноз включается только при наличии минимум трёх исторических снимков. Используется линейная экстраполяция фактической динамики. Если истории недостаточно, система показывает `insufficient_history` и не придумывает прогноз.
+
+### alpha.14 — AI CIO
+
+Блок **«Что бы сделал CIO в ближайшие 90 дней»** ранжирует до семи приоритетных решений и показывает:
 
 ```text
-Факт
-→ корневая причина
-→ влияние на бизнес
-→ рекомендуемое действие
+проблема
+→ почему это важно
+→ какое решение принять
+→ кто должен отвечать
+→ срок
 → уверенность вывода
 ```
 
-Примеры анализируемых причин:
-
-- просроченные задачи;
-- задачи без крайнего срока;
-- неполное покрытие эталонной модели;
-- недостаточная автоматизация;
-- слабое качество CRM;
-- незрелый документооборот;
-- перегрузка отдельных сотрудников.
-
-Groq не участвует в расчёте KPI и причин. Выводы формируются детерминированно по подтверждённым данным.
+Groq не принимает управленческие решения. Рекомендации формируются детерминированно по доказанным отклонениям AI-BIT.
 
 Результат сохраняется в Executive Intelligence:
 
 ```json
 {
-  "executive_kpi": {
-    "kpis": [],
-    "root_causes": [],
-    "priority_actions": [],
-    "summary": {}
-  }
+  "transformation_roadmap": {},
+  "executive_timeline": {},
+  "risk_forecast": {},
+  "ai_cio": {}
 }
 ```
 
@@ -66,6 +64,18 @@ Groq не участвует в расчёте KPI и причин. Выводы
 
 ```text
 http://SERVER_IP:8090/#management
+```
+
+## 2.0.0-alpha.10 — Executive KPI Center + Root Cause Analysis
+
+На странице руководителя рассчитываются KPI внедрения, использования, управления, исполнения, автоматизации, CRM и документооборота. Для каждого существенного отклонения формируется цепочка:
+
+```text
+Факт
+→ корневая причина
+→ влияние на бизнес
+→ рекомендуемое действие
+→ уверенность вывода
 ```
 
 ## 2.0.0-alpha.9 — Advanced Business Value Engine
@@ -82,28 +92,11 @@ http://SERVER_IP:8090/#management
 - индикативная стоимость неиспользуемого потенциала Bitrix24;
 - совокупный консервативный эффект в часах и тенге.
 
-### Принципы расчёта
-
 Денежные показатели используют ставку:
 
 ```env
 ROI_HOURLY_COST_KZT=4000
 ```
-
-Базовые усреднённые параметры:
-
-```env
-PAPER_PAGES_PER_USER_MONTH=25
-PAPER_BLENDED_PAGE_COST_KZT=15
-PAPER_REDUCTION_RATE=0.60
-VALUE_OVERDUE_MINUTES_PER_TASK_MONTH=30
-VALUE_NO_DEADLINE_MINUTES_PER_TASK_MONTH=15
-VALUE_DOCUMENT_SEARCH_HOURS_USER_MONTH=0.5
-VALUE_MANAGEMENT_HOURS_DEPARTMENT_MONTH=1.5
-VALUE_APPROVAL_REDUCTION_RATE=0.50
-```
-
-Неиспользуемый потенциал и ускорение согласований показываются отдельно и не прибавляются повторно к совокупному итогу.
 
 ## Архитектура аудита
 
@@ -118,6 +111,10 @@ Deep REST Evidence
 → Advanced Business Value Engine
 → Executive KPI Center
 → Root Cause Analysis
+→ Roadmap Generator
+→ Executive Timeline
+→ Evidence-Based Risk Forecast
+→ AI CIO
 → Resilient Executive Brief
 ```
 
@@ -186,32 +183,28 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "2.0.0-alpha.10",
+  "version": "2.0.0-alpha.14",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
 ```
 
-## Проверка Executive KPI
+## Проверка Transformation Intelligence
 
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
-  | jq '.executive_kpi'
+  -o /tmp/executive-alpha14.json
 ```
 
-Краткая сводка:
-
 ```bash
-curl -sS \
-  http://127.0.0.1:8090/executive-intelligence/latest \
-  | jq '{
-      kpis: .executive_kpi.kpis,
-      root_causes: .executive_kpi.root_causes,
-      priority_actions: .executive_kpi.priority_actions,
-      summary: .executive_kpi.summary
-    }'
+jq '{
+  roadmap: .transformation_roadmap,
+  timeline: .executive_timeline,
+  forecast: .risk_forecast,
+  ai_cio: .ai_cio
+}' /tmp/executive-alpha14.json
 ```
 
 ## Разработчик
