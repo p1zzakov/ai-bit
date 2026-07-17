@@ -72,11 +72,23 @@ def inject_attribution(html: str) -> str:
     return html + fragment
 
 
+def _should_skip_injection(request: Request) -> bool:
+    # Unified Admin owns the single visible attribution. Embedded module pages
+    # must not render another fixed footer inside their iframe.
+    if request.headers.get("sec-fetch-dest", "").lower() == "iframe":
+        return True
+    # Generated report HTML already contains the attribution in its template.
+    path = request.url.path
+    if path.startswith("/reports/") and path.endswith("/html"):
+        return True
+    return False
+
+
 class BrandingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         content_type = response.headers.get("content-type", "").lower()
-        if "text/html" not in content_type:
+        if "text/html" not in content_type or _should_skip_injection(request):
             return response
         body = b""
         async for chunk in response.body_iterator:
