@@ -14,34 +14,67 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 4. AI работает только по переданным фактам.
 5. Рекомендации содержат проблему, действие и приоритет.
 6. Оценки должны быть воспроизводимыми и объяснимыми.
+7. Авторство и контакт разработчика отображаются централизованно и проверяются через Brand Integrity.
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.6`.
+Browser Worker: `1.0.0-rc.7`.
 
-## Что добавлено в rc.6
+## Что добавлено в rc.7
 
-### Scheduling & Automation
+### Developer Attribution & Brand Integrity
 
-- встроенный планировщик фоновых задач;
-- автоматический Operational snapshot;
-- автоматический Business Architecture Audit;
-- автоматический portal crawl;
-- автоматическое формирование Executive Report;
-- ручной запуск каждой задачи из интерфейса;
-- защита от параллельного повторного запуска одной задачи;
-- журнал выполнений, ошибок и длительности;
-- хранение состояния планировщика в артефактах;
-- новая вкладка **Автоматизация** в Unified Enterprise Admin;
-- настройки расписания через `.env`.
-
-Поддерживаемые форматы расписаний:
+- на все HTML-страницы автоматически добавляется единая подпись:
 
 ```text
-daily@HH:MM
-weekly:mon@HH:MM
-monthly:DAY@HH:MM
+Разработчик: Коваленко А.С. · pizzakov@gmail.com
 ```
+
+- подпись внедряется централизованным middleware и не требует ручного копирования в каждый dashboard;
+- HTML- и PDF-отчёты содержат данные разработчика;
+- JSON-отчёт содержит секцию `developer`;
+- `/health` содержит поля `product`, `developer`, `contact` и `brand_integrity`;
+- `/system/health` показывает состояние Brand Integrity;
+- при изменении обязательных метаданных система не ломается, а возвращает предупреждение;
+- добавлены страница `/about` и API `/about/meta`;
+- конфигурация проверяется контрольным SHA-256 digest.
+
+Brand Integrity предназначен для обнаружения изменений обязательной подписи. Он не содержит намеренных механизмов отказа, саботажа или скрытой блокировки системы.
+
+## Разработчик
+
+```text
+Коваленко А.С.
+pizzakov@gmail.com
+```
+
+Страница продукта:
+
+```text
+http://SERVER_IP:8090/about
+```
+
+Метаданные:
+
+```bash
+curl -sS http://127.0.0.1:8090/about/meta | jq
+```
+
+## Основные модули
+
+- Implementation Audit;
+- Deep Audit;
+- Operational Intelligence;
+- Operational Trends 7/30/90;
+- Process Mining;
+- Business Process Audit;
+- CRM Funnel Audit;
+- Document Flow Audit;
+- System Health & Data Quality;
+- Groq AI Coach;
+- Reports & Export;
+- Scheduling & Automation;
+- Developer Attribution & Brand Integrity.
 
 ## Unified Enterprise Admin
 
@@ -62,21 +95,6 @@ http://SERVER_IP:8090/admin
 #automation
 #system
 ```
-
-## Основные модули
-
-- Implementation Audit;
-- Deep Audit;
-- Operational Intelligence;
-- Operational Trends 7/30/90;
-- Process Mining;
-- Business Process Audit;
-- CRM Funnel Audit;
-- Document Flow Audit;
-- System Health & Data Quality;
-- Groq AI Coach;
-- Reports & Export;
-- Scheduling & Automation.
 
 ## Конфигурация
 
@@ -133,7 +151,15 @@ curl -sS http://127.0.0.1:8090/health | jq
 
 ```json
 {
-  "version": "1.0.0-rc.6"
+  "status": "ok",
+  "version": "1.0.0-rc.7",
+  "product": "AI-BIT Enterprise",
+  "developer": "Коваленко А.С.",
+  "contact": "pizzakov@gmail.com",
+  "brand_integrity": {
+    "status": "ok",
+    "valid": true
+  }
 }
 ```
 
@@ -150,59 +176,54 @@ http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 http://SERVER_IP:8090/reports-ui             Reports & Export
 http://SERVER_IP:8090/automation             Scheduling & Automation
 http://SERVER_IP:8090/system                 System Health & Data Quality
+http://SERVER_IP:8090/about                  О системе и разработчике
+```
+
+## Brand Integrity API
+
+```bash
+curl -sS http://127.0.0.1:8090/about/meta | jq
+curl -sS http://127.0.0.1:8090/system/health | jq '.brand_integrity,.developer'
+curl -sS http://127.0.0.1:8090/health | jq '{product,developer,contact,brand_integrity}'
+```
+
+В нормальном состоянии:
+
+```json
+{
+  "status": "ok",
+  "valid": true,
+  "marker": "ai-bit-developer-attribution",
+  "message": "Developer attribution configuration is intact"
+}
 ```
 
 ## Scheduling API
 
-Статус планировщика:
-
 ```bash
 curl -sS http://127.0.0.1:8090/scheduler/status | jq
-```
-
-Ручной запуск задач:
-
-```bash
 curl -sS -X POST http://127.0.0.1:8090/scheduler/run/operations | jq
 curl -sS -X POST http://127.0.0.1:8090/scheduler/run/business_architecture | jq
 curl -sS -X POST http://127.0.0.1:8090/scheduler/run/crawl | jq
 curl -sS -X POST http://127.0.0.1:8090/scheduler/run/executive_report | jq
 ```
 
-Артефакты планировщика:
-
-```text
-/app/artifacts/scheduler/state.json
-/app/artifacts/scheduler/history.jsonl
-```
-
-При стандартном volume mapping:
-
-```text
-/opt/ai-bit/reports/ui/scheduler/
-```
-
 ## Reports & Export API
-
-Сформировать отчёт:
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
-```
-
-Список отчётов:
-
-```bash
 curl -sS http://127.0.0.1:8090/reports | jq
 ```
 
-Скачать отчёт:
+Форматы скачивания:
 
 ```text
 GET /reports/{REPORT_ID}/html
 GET /reports/{REPORT_ID}/json
 GET /reports/{REPORT_ID}/pdf
 ```
+
+Новые отчёты содержат подпись разработчика в HTML, PDF и JSON.
 
 ## System Health API
 
@@ -236,6 +257,9 @@ GET  /business-architecture
 GET  /reports-ui
 GET  /automation
 GET  /system
+GET  /health
+GET  /about
+GET  /about/meta
 GET  /scheduler/status
 POST /scheduler/run/{job_name}
 GET  /reports
@@ -253,14 +277,12 @@ GET  /ai/status
 POST /ai/advice
 ```
 
-## Ограничения rc.6
+## Ограничения rc.7
 
+- Brand Integrity обнаруживает изменение централизованной конфигурации, но не блокирует работу системы;
+- middleware применяется только к ответам `text/html`;
+- ранее сформированные PDF не изменяются — подпись появится в новых отчётах;
 - планировщик работает внутри процесса Browser Worker и требует постоянно запущенный контейнер;
-- после рестарта контейнера расписание продолжает работу, история сохраняется в volume;
-- crawl использует техническую учётную запись Browser Worker;
-- monthly-расписание поддерживает фиксированный день месяца;
-- время задаётся в `SCHEDULER_TIMEZONE`;
-- отчёт и аудит используют последние доступные данные;
 - AI не заменяет подтверждение владельцем процесса.
 
 ## Roadmap
@@ -275,5 +297,6 @@ POST /ai/advice
 - `rc.4` — Enterprise UI Refresh;
 - `rc.5` — Reports & Export;
 - `rc.6` — Scheduling & Automation;
+- `rc.7` — Developer Attribution & Brand Integrity;
 - `1.0.0` — стабилизация, тесты и релизная документация;
 - `2.0` — Digital Maturity, AI Consultant, ROI, HeatMap и Digital Twin.
