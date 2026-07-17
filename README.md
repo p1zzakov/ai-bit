@@ -4,45 +4,50 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `2.0.0-alpha.3`.
+Browser Worker: `2.0.0-alpha.4`.
 
-## 2.0.0-alpha.3 — Evidence-Based Audit
+## 2.0.0-alpha.4 — Deep REST Evidence
 
-AI-BIT больше не считает ручное утверждение достаточным доказательством наличия или отсутствия процесса. Каждый вывод строится по матрице:
+AI-BIT формирует статусы процессов только по данным, которые система получила и проверила самостоятельно.
 
-```text
-требование → проверенные источники → найденные факты → статус → уверенность
-```
+Ручные пожелания и утверждения владельца проекта:
 
-Статусы:
+- не устанавливают статус `missing`;
+- не снижают Digital Maturity;
+- не создают риски и рекомендации;
+- не выводятся в отчёте руководителя как установленный факт.
 
-- `implemented` — найдены независимые подтверждения конфигурации и фактического использования;
-- `partial` — найдены отдельные признаки, но полный маршрут или использование не подтверждены;
-- `missing` — все обязательные источники доступны и проверены, подтверждений не найдено;
+Эталонная модель определяет, какие возможности рекомендуется проверить, но результат определяется доказательной матрицей.
+
+### Прямые REST-проверки
+
+Система выполняет read-only запросы к Bitrix24 и проверяет доступные сущности:
+
+- типы смарт-процессов;
+- CRM-категории и стадии;
+- сделки и признаки фактической активности;
+- шаблоны и экземпляры бизнес-процессов;
+- универсальные списки;
+- CRM-формы;
+- хранилища Диска.
+
+Недоступный или неподдерживаемый REST-метод не считается доказательством отсутствия процесса.
+
+### Правила статусов
+
+- `implemented` — REST и независимые источники подтверждают конфигурацию и использование;
+- `partial` — найдены отдельные системные признаки, но полный маршрут или использование не подтверждены;
+- `missing` — все обязательные технические источники доступны и проверены, подтверждений нет;
 - `unknown` — данных недостаточно; не считается отсутствием.
 
-Ручное подтверждение владельца процесса сохраняется как отдельный источник `manual_claim`, но не подменяет техническую проверку.
+Каждый вывод содержит:
 
-### Проверяемые источники
-
-- карта и содержимое портала;
-- Business Architecture Audit;
-- Process Mining и фактические запуски;
-- Operational Intelligence;
-- Automatic Capability Discovery;
-- подтверждение владельца процесса.
-
-Для каждого процесса сохраняются:
-
-- список обязательных источников;
-- доступность каждого источника;
-- найденные совпадения;
-- источники фактического использования;
+- проверенные источники;
+- доступность источников;
+- найденные факты;
 - итоговый статус;
-- уверенность в процентах;
-- понятное обоснование вывода.
-
-На странице `#management` у разрывов эталонной модели появилась кнопка **«Показать доказательства»**.
+- уверенность;
+- понятное обоснование.
 
 ## Главная ссылка для руководства
 
@@ -50,7 +55,7 @@ AI-BIT больше не считает ручное утверждение до
 http://SERVER_IP:8090/#management
 ```
 
-Ссылка не меняется. Страница автоматически показывает Executive Brief, сравнение с эталонной моделью и доказательства по каждому существенному разрыву.
+Ссылка не меняется. На странице отображаются только выводы, подтверждённые самой системой. Для каждого существенного разрыва доступен блок **«Показать доказательства»**.
 
 ## Основные модули
 
@@ -63,6 +68,7 @@ http://SERVER_IP:8090/#management
 - Reference Model Audit;
 - Automatic Capability Discovery;
 - Evidence-Based Audit;
+- Deep REST Evidence;
 - Executive Brief и Management Report;
 - Reports & Export;
 - Scheduling & Automation;
@@ -88,18 +94,6 @@ GROQ_API_KEY=
 
 ROI_HOURLY_COST_KZT=0
 REFERENCE_MODEL_PROFILE=manufacturing_enterprise
-
-SCHEDULER_ENABLED=true
-SCHEDULER_TIMEZONE=Asia/Almaty
-SCHEDULER_POLL_SECONDS=30
-SCHEDULER_OPERATIONS_ENABLED=true
-SCHEDULER_OPERATIONS_SCHEDULE=daily@06:00
-SCHEDULER_BUSINESS_ARCHITECTURE_ENABLED=true
-SCHEDULER_BUSINESS_ARCHITECTURE_SCHEDULE=weekly:mon@07:00
-SCHEDULER_CRAWL_ENABLED=true
-SCHEDULER_CRAWL_SCHEDULE=weekly:sun@03:00
-SCHEDULER_EXECUTIVE_REPORT_ENABLED=true
-SCHEDULER_EXECUTIVE_REPORT_SCHEDULE=monthly:1@08:00
 ```
 
 ## Развёртывание
@@ -123,40 +117,40 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "2.0.0-alpha.3",
+  "version": "2.0.0-alpha.4",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
 ```
 
-## API доказательного аудита
+## Deep REST Evidence API
 
-Собрать доказательства:
+Запустить прямые REST-проверки:
+
+```bash
+curl -sS -X POST \
+  http://127.0.0.1:8090/deep-rest-evidence/collect \
+  | jq
+```
+
+Посмотреть доступность методов:
+
+```bash
+curl -sS \
+  http://127.0.0.1:8090/deep-rest-evidence/latest \
+  | jq '{configured,summary,probes}'
+```
+
+## Доказательный аудит
 
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/evidence-audit/collect \
-  | jq
+  | jq '{methodology,deep_rest_summary,summary,capabilities}'
 ```
 
-Последний результат:
-
-```bash
-curl -sS \
-  http://127.0.0.1:8090/evidence-audit/latest \
-  | jq '{methodology,summary,capabilities}'
-```
-
-Пересчитать эталонный аудит с доказательной матрицей:
-
-```bash
-curl -sS -X POST \
-  http://127.0.0.1:8090/reference-audit/collect \
-  | jq '{profile,coverage,summary,critical_gaps,evidence_audit}'
-```
-
-Проверить конкретный процесс:
+Проверить согласование договоров:
 
 ```bash
 curl -sS \
@@ -164,20 +158,29 @@ curl -sS \
   | jq '.capabilities.contract_approval'
 ```
 
+Пересчитать эталонный аудит:
+
+```bash
+curl -sS -X POST \
+  http://127.0.0.1:8090/reference-audit/collect \
+  | jq '{profile,coverage,summary,critical_gaps,evidence_audit}'
+```
+
 Артефакты:
 
 ```text
+/app/artifacts/deep-rest-evidence/latest.json
 /app/artifacts/capability-discovery/latest.json
 /app/artifacts/evidence-audit/latest.json
 /app/artifacts/reference-audit/latest.json
 ```
 
-## Ограничения alpha.3
+## Ограничения alpha.4
 
+- REST-методы зависят от редакции Bitrix24 и прав входящего webhook;
+- ошибка или отсутствие права на метод переводит источник в недоступный, а не в отрицательный;
+- `missing` допустим только при успешной проверке всех обязательных технических источников;
 - методика AI-BIT не является официальной сертификацией Bitrix24;
-- отрицательный вывод допустим только при доступности всех обязательных источников;
-- текущий Automatic Capability Discovery использует агрегированные артефакты, поэтому часть процессов останется `unknown` до появления более детальных REST-проверок;
-- ручные сведения учитываются, но не имеют исключительного приоритета;
 - экономический эффект и Digital Maturity являются инструментами приоритизации.
 
 ## Roadmap 2.0
@@ -185,9 +188,10 @@ curl -sS \
 - `2.0.0-alpha.1` — Reference Model Audit;
 - `2.0.0-alpha.2` — Automatic Capability Discovery;
 - `2.0.0-alpha.3` — Evidence-Based Audit;
-- `2.0.0-alpha.4` — детальные REST-проверки смарт-процессов, шаблонов, стадий и запусков;
-- `2.0.0-beta.1` — отраслевые профили и редактор эталонной модели;
-- `2.0.0-beta.2` — AI Consultant и целевая дорожная карта;
+- `2.0.0-alpha.4` — Deep REST Evidence и отказ от ручных статусов;
+- `2.0.0-alpha.5` — Evidence Matrix UI;
+- `2.0.0-beta.1` — Target Roadmap;
+- `2.0.0-beta.2` — AI Consultant;
 - `2.0.0` — стабильная экспертная система цифровой трансформации.
 
 ## Разработчик
