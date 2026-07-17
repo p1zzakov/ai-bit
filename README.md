@@ -4,13 +4,13 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Vision
 
-Платформа обнаруживает проблемы, показывает evidence, объясняет причины и формирует приоритетный план цифровой трансформации на основе фактических данных портала.
+Платформа обнаруживает проблемы, показывает фактические подтверждения, объясняет причины и формирует приоритетный план цифровой трансформации на основе данных портала.
 
 ## Principles
 
 1. Только read-only работа с Bitrix24.
-2. Каждый вывод должен иметь REST, Browser или Operational evidence.
-3. Недостаток данных возвращается как `partial` или `insufficient_data`.
+2. Каждый вывод должен иметь фактическое подтверждение.
+3. Недостаток данных обозначается прямо, без домыслов.
 4. AI работает только по переданным фактам.
 5. Рекомендации содержат проблему, действие и приоритет.
 6. Оценки должны быть воспроизводимыми и объяснимыми.
@@ -18,62 +18,47 @@ AI-BIT Enterprise — read-only платформа непрерывного те
 
 ## Текущая версия
 
-Browser Worker: `1.0.0-rc.8`.
+Browser Worker: `1.0.0-rc.10`.
 
-## Что добавлено в rc.8
+## Что добавлено в rc.10
 
-### Brand Cleanup
+### Отчёт для руководства без технических терминов
 
-- устранено дублирование подписи разработчика в Unified Enterprise Admin;
-- внешняя оболочка админки отображает один экземпляр подписи;
-- страницы, загруженные внутри `iframe`, не добавляют собственный fixed-footer;
-- при прямом открытии `/executive`, `/dashboard`, `/operations` и других модулей подпись сохраняется;
-- HTML/PDF-отчёты продолжают содержать независимую подпись разработчика;
-- middleware остаётся идемпотентным: существующий `ai-bit-developer-attribution` повторно не добавляется;
-- версия всех runtime-компонентов приведена к `1.0.0-rc.8`.
+Groq собирает данные из всех аналитических контуров AI-BIT и формирует понятное управленческое заключение для генерального директора и руководителей подразделений.
 
-Подпись:
+Отчёт содержит:
 
-```text
-Разработчик: Коваленко А.С. · pizzakov@gmail.com
-```
+- общую оценку внедрения Bitrix24;
+- сильные стороны;
+- основные слабые места;
+- оценку администрирования и управления системой;
+- организацию работы и контроль задач;
+- бизнес-процессы;
+- продажи и работу с клиентами;
+- документооборот;
+- автоматизацию;
+- главные риски;
+- приоритетные действия;
+- план на 30 / 60 / 90 дней;
+- итоговое заключение для руководства.
 
-Brand Integrity обнаруживает изменения обязательных метаданных, но не блокирует и не ломает работу системы.
+Текст формируется простым деловым русским языком без терминов `REST`, `webhook`, `crawl`, `JSON` и другого программного жаргона.
 
-## Разработчик
-
-```text
-Коваленко А.С.
-pizzakov@gmail.com
-```
-
-Страница продукта:
+Поддерживаются два режима:
 
 ```text
-http://SERVER_IP:8090/about
+Краткий отчёт   — ориентирован на 1–2 страницы
+Подробный отчёт — развёрнутый анализ по всем направлениям
 ```
 
-Метаданные:
+Доступны:
 
-```bash
-curl -sS http://127.0.0.1:8090/about/meta | jq
-```
-
-## Основные модули
-
-- Implementation Audit;
-- Deep Audit;
-- Operational Intelligence;
-- Operational Trends 7/30/90;
-- Process Mining;
-- Business Process Audit;
-- CRM Funnel Audit;
-- Document Flow Audit;
-- System Health & Data Quality;
-- Groq AI Coach;
-- Reports & Export;
-- Scheduling & Automation;
-- Developer Attribution & Brand Integrity.
+- просмотр в единой админке;
+- копирование текста;
+- HTML;
+- PDF;
+- JSON;
+- история ранее сформированных отчётов.
 
 ## Unified Enterprise Admin
 
@@ -91,10 +76,34 @@ http://SERVER_IP:8090/admin
 #processes
 #architecture
 #reports
+#management
 #automation
 #system
 #about
 ```
+
+Прямая ссылка на новый раздел:
+
+```text
+http://SERVER_IP:8090/management-report
+```
+
+## Основные модули
+
+- Implementation Audit;
+- Deep Audit;
+- Operational Intelligence;
+- Operational Trends 7/30/90;
+- Process Mining;
+- Business Process Audit;
+- CRM Funnel Audit;
+- Document Flow Audit;
+- System Health & Data Quality;
+- Groq AI Coach;
+- Reports & Export;
+- Management Report;
+- Scheduling & Automation;
+- Developer Attribution & Brand Integrity.
 
 ## Конфигурация
 
@@ -125,8 +134,6 @@ SCHEDULER_EXECUTIVE_REPORT_ENABLED=true
 SCHEDULER_EXECUTIVE_REPORT_SCHEDULE=monthly:1@08:00
 ```
 
-Webhook должен иметь read-доступ к CRM, пользователям, структуре, задачам и бизнес-процессам.
-
 ## Развёртывание
 
 ```bash
@@ -148,106 +155,80 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "1.0.0-rc.8",
+  "version": "1.0.0-rc.10",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
-  "contact": "pizzakov@gmail.com",
-  "brand_integrity": {
-    "status": "ok",
-    "valid": true
-  }
+  "contact": "pizzakov@gmail.com"
 }
+```
+
+## Management Report API
+
+Сформировать краткий отчёт:
+
+```bash
+curl -sS -X POST \
+  'http://127.0.0.1:8090/management-reports/generate?mode=short' \
+  | jq
+```
+
+Сформировать подробный отчёт:
+
+```bash
+curl -sS -X POST \
+  'http://127.0.0.1:8090/management-reports/generate?mode=detailed' \
+  | jq
+```
+
+Список отчётов:
+
+```bash
+curl -sS http://127.0.0.1:8090/management-reports | jq
+```
+
+Форматы скачивания:
+
+```text
+GET /management-reports/{REPORT_ID}/html
+GET /management-reports/{REPORT_ID}/json
+GET /management-reports/{REPORT_ID}/pdf
+```
+
+Артефакты сохраняются в:
+
+```text
+/app/artifacts/management-reports/
+```
+
+При стандартном volume mapping:
+
+```text
+/opt/ai-bit/reports/ui/management-reports/
 ```
 
 ## Интерфейсы
 
 ```text
 http://SERVER_IP:8090/                       Unified Enterprise Admin
-http://SERVER_IP:8090/admin                  Unified Enterprise Admin
 http://SERVER_IP:8090/executive              Executive Dashboard и AI Coach
 http://SERVER_IP:8090/dashboard              Аудит внедрения
 http://SERVER_IP:8090/operations             Operational Intelligence
 http://SERVER_IP:8090/processes              Process Mining
 http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 http://SERVER_IP:8090/reports-ui             Reports & Export
+http://SERVER_IP:8090/management-report      Отчёт для руководства
 http://SERVER_IP:8090/automation             Scheduling & Automation
 http://SERVER_IP:8090/system                 System Health & Data Quality
 http://SERVER_IP:8090/about                  О системе и разработчике
 ```
 
-## Brand Integrity API
+## Ограничения rc.10
 
-```bash
-curl -sS http://127.0.0.1:8090/about/meta | jq
-curl -sS http://127.0.0.1:8090/system/health | jq '.brand_integrity,.developer'
-curl -sS http://127.0.0.1:8090/health | jq '{product,developer,contact,brand_integrity}'
-```
-
-## Scheduling API
-
-```bash
-curl -sS http://127.0.0.1:8090/scheduler/status | jq
-curl -sS -X POST http://127.0.0.1:8090/scheduler/run/operations | jq
-curl -sS -X POST http://127.0.0.1:8090/scheduler/run/business_architecture | jq
-curl -sS -X POST http://127.0.0.1:8090/scheduler/run/crawl | jq
-curl -sS -X POST http://127.0.0.1:8090/scheduler/run/executive_report | jq
-```
-
-## Reports & Export API
-
-```bash
-curl -sS -X POST http://127.0.0.1:8090/reports/generate | jq
-curl -sS http://127.0.0.1:8090/reports | jq
-```
-
-Форматы:
-
-```text
-GET /reports/{REPORT_ID}/html
-GET /reports/{REPORT_ID}/json
-GET /reports/{REPORT_ID}/pdf
-```
-
-## Основные API
-
-```text
-GET  /
-GET  /admin
-GET  /executive
-GET  /dashboard
-GET  /operations
-GET  /processes
-GET  /business-architecture
-GET  /reports-ui
-GET  /automation
-GET  /system
-GET  /health
-GET  /about
-GET  /about/meta
-GET  /scheduler/status
-POST /scheduler/run/{job_name}
-GET  /reports
-POST /reports/generate
-GET  /reports/{report_id}/{format}
-GET  /system/health
-POST /operations/collect
-GET  /operations/latest
-GET  /operations/trends?days=7|30|90
-GET  /process-mining/latest
-POST /business-architecture/collect
-GET  /business-architecture/latest
-GET  /knowledge-graph/latest
-GET  /ai/status
-POST /ai/advice
-```
-
-## Ограничения rc.8
-
-- определение iframe использует стандартный заголовок браузера `Sec-Fetch-Dest: iframe`;
-- при прямом запросе нестандартным клиентом подпись может отображаться как для самостоятельной страницы;
-- ранее сформированные PDF не изменяются;
-- планировщик работает внутри процесса Browser Worker;
-- AI не заменяет подтверждение владельцем процесса.
+- качество заключения зависит от свежести исходных данных;
+- Groq не выдумывает отсутствующие сведения и должен обозначать недостаток данных;
+- денежный эффект не рассчитывается без заданной стоимости рабочего часа;
+- отчёт является поддержкой управленческого решения, а не заменой владельцев процессов;
+- ранее сформированные отчёты автоматически не изменяются.
 
 ## Roadmap
 
@@ -262,6 +243,14 @@ POST /ai/advice
 - `rc.5` — Reports & Export;
 - `rc.6` — Scheduling & Automation;
 - `rc.7` — Developer Attribution & Brand Integrity;
-- `rc.8` — Brand Cleanup и единая подпись в админке;
+- `rc.8–rc.9` — Brand Cleanup и компактный info-icon;
+- `rc.10` — Management Report без технического жаргона;
 - `1.0.0` — стабилизация, тесты и релизная документация;
 - `2.0` — Digital Maturity, AI Consultant, ROI, HeatMap и Digital Twin.
+
+## Разработчик
+
+```text
+Коваленко А.С.
+pizzakov@gmail.com
+```
