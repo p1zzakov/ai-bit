@@ -8,6 +8,8 @@ from typing import Any
 
 from playwright.async_api import async_playwright
 
+from branding import DEVELOPER_EMAIL, DEVELOPER_NAME, inject_attribution
+
 
 def _read_json(path: Path) -> dict[str, Any] | None:
     try:
@@ -60,8 +62,9 @@ def build_report_payload(artifacts_dir: Path) -> dict[str, Any]:
     recommendations.extend(deep_audit.get("action_plan") or [])
 
     return {
-        "version": "1.0.0-rc.5",
+        "version": "1.0.0-rc.7",
         "generated_at": datetime.now(UTC).isoformat(),
+        "developer": {"name": DEVELOPER_NAME, "email": DEVELOPER_EMAIL},
         "executive": {
             "enterprise_health": architecture.get("enterprise_health"),
             "implementation_score": assessment.get("implementation_score"),
@@ -104,7 +107,7 @@ def render_report_html(payload: dict[str, Any]) -> str:
 <section class="section"><h2>Process Mining</h2><div class="grid">{_metric("Проанализировано задач", pms.get("tasks_analyzed"))}{_metric("Повторяющиеся паттерны", pms.get("repeated_patterns"))}{_metric("Узкие места", pms.get("potential_bottlenecks"))}{_metric("Ручные часы", pms.get("estimated_manual_hours"))}</div></section>
 <section><h2>Ключевые рекомендации</h2>{_recommendation_rows(payload.get("recommendations") or [])}</section>
 <section><h2>План 30 / 60 / 90 дней</h2><h3>30 дней</h3>{_recommendation_rows((payload.get("plan") or {}).get("30_days") or [])}<h3>60 дней</h3>{_recommendation_rows((payload.get("plan") or {}).get("60_days") or [])}<h3>90 дней</h3>{_recommendation_rows((payload.get("plan") or {}).get("90_days") or [])}</section>
-<footer>AI-BIT Enterprise · read-only audit · выводы должны подтверждаться владельцами процессов.</footer></body></html>'''
+<footer>AI-BIT Enterprise · Разработчик: {escape(DEVELOPER_NAME)} · {escape(DEVELOPER_EMAIL)} · read-only audit</footer></body></html>'''
 
 
 async def generate_report(artifacts_dir: Path) -> dict[str, Any]:
@@ -116,7 +119,7 @@ async def generate_report(artifacts_dir: Path) -> dict[str, Any]:
     html_path = root / f"executive-report-{stamp}.html"
     pdf_path = root / f"executive-report-{stamp}.pdf"
     json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    html = render_report_html(payload)
+    html = inject_attribution(render_report_html(payload))
     html_path.write_text(html, encoding="utf-8")
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
@@ -131,6 +134,7 @@ async def generate_report(artifacts_dir: Path) -> dict[str, Any]:
         "html": str(html_path),
         "pdf": str(pdf_path),
         "summary": payload.get("executive", {}),
+        "developer": payload.get("developer", {}),
     }
     (root / "latest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
