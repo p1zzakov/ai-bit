@@ -56,10 +56,14 @@ def brand_integrity() -> dict[str, Any]:
 
 def attribution_fragment() -> str:
     return f'''<style id="{BRAND_MARKER}-style">
-#{BRAND_MARKER}{{position:fixed;right:16px;bottom:12px;z-index:2147483000;padding:7px 11px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:rgba(8,15,28,.88);backdrop-filter:blur(12px);box-shadow:0 8px 28px rgba(0,0,0,.28);font:11px/1.35 Inter,Segoe UI,Arial,sans-serif;color:#9fb0c8;letter-spacing:.1px;user-select:text}}
-#{BRAND_MARKER} b{{color:#eef5ff;font-weight:650}}#{BRAND_MARKER} a{{color:#8cabff;text-decoration:none}}#{BRAND_MARKER} a:hover{{text-decoration:underline}}
-@media print{{#{BRAND_MARKER}{{position:fixed;right:8mm;bottom:5mm;background:#fff;color:#667085;border-color:#d0d5dd;box-shadow:none}}#{BRAND_MARKER} b{{color:#101828}}}}
-</style><div id="{BRAND_MARKER}" data-brand-integrity="{_digest()}">Разработчик: <b>{DEVELOPER_NAME}</b> · <a href="mailto:{DEVELOPER_EMAIL}">{DEVELOPER_EMAIL}</a></div>'''
+#{BRAND_MARKER}{{position:fixed;right:18px;bottom:16px;z-index:2147483000;font:12px/1.4 Inter,Segoe UI,Arial,sans-serif}}
+#{BRAND_MARKER} .brand-info-button{{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(148,163,184,.32);background:rgba(10,18,32,.92);color:#aebbd0;font:700 15px/1 Georgia,serif;cursor:help;box-shadow:0 8px 24px rgba(0,0,0,.3);backdrop-filter:blur(12px);transition:.18s ease}}
+#{BRAND_MARKER}:hover .brand-info-button,#{BRAND_MARKER}:focus-within .brand-info-button{{color:#fff;border-color:rgba(109,140,255,.72);background:linear-gradient(135deg,#496ee8,#7657de);transform:translateY(-1px)}}
+#{BRAND_MARKER} .brand-info-tooltip{{position:absolute;right:0;bottom:40px;width:max-content;max-width:280px;padding:11px 13px;border:1px solid rgba(148,163,184,.28);border-radius:11px;background:rgba(8,15,28,.97);color:#aebbd0;box-shadow:0 14px 38px rgba(0,0,0,.38);opacity:0;visibility:hidden;transform:translateY(5px);pointer-events:none;transition:.16s ease;white-space:nowrap}}
+#{BRAND_MARKER}:hover .brand-info-tooltip,#{BRAND_MARKER}:focus-within .brand-info-tooltip{{opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto}}
+#{BRAND_MARKER} .brand-info-tooltip b{{display:block;color:#eef5ff;font-weight:650;margin-bottom:2px}}#{BRAND_MARKER} .brand-info-tooltip a{{color:#8cabff;text-decoration:none}}#{BRAND_MARKER} .brand-info-tooltip a:hover{{text-decoration:underline}}
+@media print{{#{BRAND_MARKER}{{display:none}}}}
+</style><div id="{BRAND_MARKER}" data-brand-integrity="{_digest()}"><button class="brand-info-button" type="button" aria-label="Информация о разработчике">i</button><div class="brand-info-tooltip" role="tooltip"><b>Разработчик: {DEVELOPER_NAME}</b><a href="mailto:{DEVELOPER_EMAIL}">{DEVELOPER_EMAIL}</a></div></div>'''
 
 
 def inject_attribution(html: str) -> str:
@@ -73,11 +77,8 @@ def inject_attribution(html: str) -> str:
 
 
 def _should_skip_injection(request: Request) -> bool:
-    # Unified Admin owns the single visible attribution. Embedded module pages
-    # must not render another fixed footer inside their iframe.
     if request.headers.get("sec-fetch-dest", "").lower() == "iframe":
         return True
-    # Generated report HTML already contains the attribution in its template.
     path = request.url.path
     if path.startswith("/reports/") and path.endswith("/html"):
         return True
