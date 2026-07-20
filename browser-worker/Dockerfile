@@ -52,6 +52,8 @@ COPY knowledge_base.py ./knowledge_base.py
 COPY knowledge_catalog.json ./knowledge_catalog.json
 COPY scheduler_engine.py ./scheduler_engine.py
 COPY automation_dashboard.py ./automation_dashboard.py
+COPY integrator_diagnostics.py ./integrator_diagnostics.py
+COPY integrator_dashboard.py ./integrator_dashboard.py
 COPY branding.py ./branding.py
 COPY unified_graph.py ./unified_graph.py
 COPY ai_provider.py ./ai_provider.py
@@ -84,6 +86,7 @@ COPY release_300_patch.py ./release_300_patch.py
 COPY release_310_patch.py ./release_310_patch.py
 COPY release_320_patch.py ./release_320_patch.py
 COPY release_321_patch.py ./release_321_patch.py
+COPY release_340_patch.py ./release_340_patch.py
 RUN python ./build_patch.py \
     && python ./crawler_patch.py \
     && python ./history_patch.py \
@@ -113,7 +116,8 @@ RUN python ./build_patch.py \
     && python ./release_310_patch.py \
     && python ./release_320_patch.py \
     && python ./release_321_patch.py \
-    && python -m py_compile ./app.py ./login_debug.py ./crawler.py ./history.py ./dashboard.py ./implementation_analysis.py ./deep_audit.py ./operational_intelligence.py ./operational_trends.py ./operations_dashboard.py ./executive_dashboard.py ./process_mining.py ./process_dashboard.py ./business_architecture.py ./business_architecture_dashboard.py ./admin_dashboard.py ./system_health.py ./system_dashboard.py ./report_engine.py ./reports_dashboard.py ./management_report.py ./management_report_dashboard.py ./management_brief_dashboard_v2.py ./management_compact.py ./executive_portals.py ./management_conclusion.py ./business_value.py ./executive_kpi.py ./transformation_intelligence.py ./process_optimizer.py ./release_manifest.py ./executive_intelligence.py ./executive_intelligence_dashboard.py ./reference_model.py ./capability_discovery.py ./evidence_engine.py ./deep_rest_evidence.py ./knowledge_base.py ./scheduler_engine.py ./automation_dashboard.py ./branding.py ./branding_patch.py ./management_report_patch.py ./executive_intelligence_patch.py ./management_intelligence_patch.py ./management_report_enrichment_patch.py ./executive_brief_patch.py ./mandatory_processes_patch.py ./reference_model_patch.py ./capability_discovery_patch.py ./evidence_audit_patch.py ./deep_rest_patch.py ./knowledge_base_patch.py ./management_brief_v2_patch.py ./management_conclusion_patch.py ./business_value_patch.py ./business_value_advanced_patch.py ./executive_kpi_patch.py ./transformation_intelligence_patch.py ./process_optimizer_patch.py ./release_210_patch.py ./release_220_patch.py ./release_300_patch.py ./release_310_patch.py ./release_320_patch.py ./release_321_patch.py ./unified_graph.py ./ai_provider.py
+    && python ./release_340_patch.py \
+    && python -m py_compile ./app.py ./login_debug.py ./crawler.py ./history.py ./dashboard.py ./implementation_analysis.py ./deep_audit.py ./operational_intelligence.py ./operational_trends.py ./operations_dashboard.py ./executive_dashboard.py ./process_mining.py ./process_dashboard.py ./business_architecture.py ./business_architecture_dashboard.py ./admin_dashboard.py ./system_health.py ./system_dashboard.py ./report_engine.py ./reports_dashboard.py ./management_report.py ./management_report_dashboard.py ./management_brief_dashboard_v2.py ./management_compact.py ./executive_portals.py ./management_conclusion.py ./business_value.py ./executive_kpi.py ./transformation_intelligence.py ./process_optimizer.py ./release_manifest.py ./executive_intelligence.py ./executive_intelligence_dashboard.py ./reference_model.py ./capability_discovery.py ./evidence_engine.py ./deep_rest_evidence.py ./knowledge_base.py ./scheduler_engine.py ./automation_dashboard.py ./integrator_diagnostics.py ./integrator_dashboard.py ./branding.py ./branding_patch.py ./management_report_patch.py ./executive_intelligence_patch.py ./management_intelligence_patch.py ./management_report_enrichment_patch.py ./executive_brief_patch.py ./mandatory_processes_patch.py ./reference_model_patch.py ./capability_discovery_patch.py ./evidence_audit_patch.py ./deep_rest_patch.py ./knowledge_base_patch.py ./management_brief_v2_patch.py ./management_conclusion_patch.py ./business_value_patch.py ./business_value_advanced_patch.py ./executive_kpi_patch.py ./transformation_intelligence_patch.py ./process_optimizer_patch.py ./release_210_patch.py ./release_220_patch.py ./release_300_patch.py ./release_310_patch.py ./release_320_patch.py ./release_321_patch.py ./release_340_patch.py ./unified_graph.py ./ai_provider.py
 RUN mkdir -p /app/artifacts /app/artifacts/history /app/artifacts/operations /app/artifacts/knowledge-graph /app/artifacts/process-mining /app/artifacts/business-architecture /app/artifacts/reports /app/artifacts/management-reports /app/artifacts/executive-intelligence /app/artifacts/reference-audit /app/artifacts/capability-discovery /app/artifacts/evidence-audit /app/artifacts/deep-rest-evidence /app/artifacts/scheduler /app/state
 
 EXPOSE 8090
