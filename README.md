@@ -4,51 +4,44 @@ AI-BIT Enterprise — read-only платформа доказательного 
 
 ## Текущая версия
 
-**AI-BIT Enterprise `2.2.0` — Executive UX & Bitrix Digital Passport**
+**AI-BIT Enterprise `3.0.0` — Linear Design System & Unified Layout**
 
 Главный принцип продукта:
 
 > неизвестное не считается отсутствующим, а управленческие выводы формируются только по подтверждённым данным.
 
-## Что изменилось в 2.2.0
+## Что изменилось в 3.0.0
 
-### Разгруженный отчёт для руководства
+### Linear Design System
 
-Страница `#management` переведена на трёхуровневую модель:
+Интерфейс переведён на единую светлую дизайн-систему:
 
-1. **30 секунд** — общая оценка, критичные проблемы, просрочка, задачи без срока и потенциальный экономический эффект;
-2. **управленческий вывод** — краткое объяснение ситуации и одно следующее действие;
-3. **детализация по запросу** — ссылки на специализированные аналитические страницы и раскрываемые доказательства.
+- светло-серый фон и белые рабочие поверхности;
+- компактный sidebar;
+- тонкие границы и лёгкие тени;
+- единая типографика, карточки, кнопки, таблицы и статусы;
+- спокойная цветовая логика `ok / warning / critical`;
+- адаптивное отображение для узких экранов;
+- единый визуальный язык управленческих и технических разделов.
 
-Тяжёлые блоки больше не выводятся подряд на главной странице руководителя.
+### Unified Layout
 
-### Bitrix Digital Passport
+Исправлена вложенная навигация:
 
-Отдельный экран цифрового паспорта показывает на одном экране:
+- страницы внутри Unified Admin получают маркер `embedded=1`;
+- ссылки из Digital Passport, Process Optimizer, AI CIO, Roadmap, Risk Forecast и Business Value открываются на верхнем уровне окна;
+- переход `Digital Passport → Сводка руководителя` больше не загружает второй Unified Admin внутри iframe;
+- боковое меню не дублируется.
 
-- общий индекс внедрения;
-- CRM;
-- документооборот;
-- автоматизацию;
-- бизнес-процессы;
-- исполнительскую дисциплину;
-- управленческую дисциплину;
-- покрытие эталонной модели;
-- использование системы;
-- просрочку и задачи без срока.
+### Разгруженный отчёт руководства
 
-Показатель без подтверждённых данных отображается как `нет данных`, а не заменяется выдуманной оценкой.
+Страница `#management` сохраняет трёхуровневую модель:
 
-### Специализированные страницы
+1. ключевые показатели за 30 секунд;
+2. краткий управленческий вывод и следующее действие;
+3. детализация через специализированные страницы.
 
-- `/digital-passport` — цифровой паспорт Bitrix24;
-- `/process-optimizer` — рейтинг процессов, узкие места и рекомендации;
-- `/ai-cio` — приоритетные управленческие решения на 90 дней;
-- `/transformation-roadmap` — этапы, сроки и ответственные роли;
-- `/risk-forecast` — прогноз по накопленной исторической динамике;
-- `/business-value` — экономика внедрения и состав ожидаемого эффекта.
-
-## Функциональные контуры
+## Основные аналитические контуры
 
 ### Executive Intelligence
 
@@ -117,7 +110,7 @@ Management Conclusion + KPI + Root Cause
         ↓
 Business Value + Roadmap + Timeline + Risk Forecast + AI CIO
         ↓
-Compact #management + Specialized Portals + Digital Passport
+Unified Layout + Linear Design System
 ```
 
 ## Основные интерфейсы
@@ -182,40 +175,27 @@ curl -sS http://127.0.0.1:8090/health | jq
 curl -sS http://127.0.0.1:8090/about/meta | jq
 ```
 
-Ожидаем версию:
+Ожидаем:
 
 ```json
 {
-  "version": "2.2.0"
+  "version": "3.0.0"
 }
 ```
 
-Проверка новых маршрутов:
+Проверка отсутствия вложенного меню:
 
-```bash
-curl -sS http://127.0.0.1:8090/openapi.json \
-  | jq '.paths | keys | map(select(test("digital-passport|process-optimizer|ai-cio|transformation-roadmap|risk-forecast|business-value")))'
-```
+1. открыть `http://SERVER_IP:8090/#management`;
+2. перейти в `Цифровой паспорт`;
+3. нажать `Сводка`;
+4. должен открыться один Unified Admin без вложенного sidebar.
 
 ## Полный пересчёт
 
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
-  -o /tmp/executive-2.2.0.json
-```
-
-```bash
-jq '{
-  version,
-  conclusion: .management_conclusion,
-  kpi: .executive_kpi.summary,
-  process_optimizer: .process_optimizer.summary,
-  roadmap: .transformation_roadmap,
-  forecast: .risk_forecast.status,
-  ai_cio: .ai_cio.recommendations,
-  business_value: .business_value.total
-}' /tmp/executive-2.2.0.json
+  -o /tmp/executive-3.0.0.json
 ```
 
 ## Разработчик
