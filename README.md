@@ -1,103 +1,95 @@
 # AI-BIT Enterprise
 
-AI-BIT Enterprise — read-only платформа непрерывного технического, функционального, операционного и управленческого аудита коробочного Bitrix24.
+AI-BIT Enterprise — read-only платформа доказательного технического, функционального, операционного и управленческого аудита коробочного Bitrix24.
 
 ## Текущая версия
 
-Browser Worker: `2.0.0-alpha.15`.
+**AI-BIT Enterprise `2.1.0` — Intelligent Transformation Suite**
 
-## 2.0.0-alpha.15 — AI Process Optimizer
+Главный принцип продукта:
 
-AI-BIT анализирует не только наличие процессов, но и качество их реализации. Источниками являются фактические артефакты Process Mining, Business Architecture и Deep REST Evidence.
+> неизвестное не считается отсутствующим, а управленческие выводы формируются только по подтверждённым данным.
 
-Для каждого обнаруженного процесса рассчитываются:
+## Что входит в 2.1.0
 
+### Executive Intelligence
+
+- управленческое заключение без технических терминов;
+- Executive KPI Center;
+- Root Cause Analysis;
+- AI CIO — приоритетные решения на 90 дней;
+- детерминированный Executive Summary без обязательной зависимости от Groq.
+
+### Process Intelligence
+
+- Process Mining;
+- AI Process Optimizer;
 - Process Score от 0 до 100;
-- количество этапов и запусков;
-- средняя длительность;
-- наличие SLA;
-- подтверждённые роботы и триггеры;
-- ручные действия;
-- циклы и обратные переходы;
-- ошибки выполнения;
-- зависимость от одного участника.
+- кандидаты на автоматизацию;
+- анализ маршрутов постановщик → исполнитель;
+- поиск узких мест и зависимости от отдельных сотрудников;
+- структурированные рекомендации под будущий Project Generator.
 
-Статусы процессов:
+### Transformation Intelligence
 
-- `optimized` — процесс в целом управляем;
-- `improvable` — есть подтверждённые точки оптимизации;
-- `redesign` — процесс требует переработки.
+- дорожная карта на 90 дней;
+- Executive Timeline;
+- доказательный прогноз рисков при наличии достаточной истории;
+- приоритизация действий по влиянию, срочности и уверенности вывода.
 
-Каждая рекомендация сохраняется как структурированный объект:
+### Business Value
 
-```json
-{
-  "process": "Согласование договора",
-  "category": "loops",
-  "problem": "Обнаружены повторные согласования",
-  "recommendation": "Исключить повторное прохождение подтверждённых этапов",
-  "expected_effect": "Снижение повторной работы",
-  "confidence": 93,
-  "project_generator_payload": {}
-}
-```
+- экономия рабочего времени;
+- финансовый эффект по ставке `ROI_HOURLY_COST_KZT`;
+- бумага, печать и архивирование;
+- потери из-за просрочки и задач без срока;
+- время руководителей на ручной контроль;
+- поиск документов;
+- ускорение согласований;
+- индикативная стоимость неиспользуемого потенциала Bitrix24.
 
-`project_generator_payload` станет входом для будущего генератора проектов и задач Bitrix24.
+### Evidence Platform
 
-На странице руководителя отображаются:
+- Deep REST Evidence;
+- Automatic Capability Discovery;
+- Evidence-Based Audit;
+- Knowledge Base & Methodology;
+- Reference Model Audit;
+- статусы `implemented`, `partial`, `missing`, `unknown`;
+- ручные пожелания не влияют на итоговую оценку.
 
-- общая оценка процессов;
-- количество проверенных процессов;
-- процессы, которые можно улучшить;
-- процессы, требующие переработки;
-- рейтинг процессов;
-- десять приоритетных рекомендаций.
+### Platform
 
-Если данных недостаточно, система показывает `insufficient_data` и не придумывает проблемы.
+- Unified Enterprise Admin;
+- Reports & Export;
+- Scheduling & Automation;
+- System Health & Data Quality;
+- исторические снимки;
+- безопасный fallback при недоступности Groq.
 
-## 2.0.0-alpha.11–alpha.14 — Transformation Intelligence
-
-На странице руководителя добавлен единый контур управления изменениями.
-
-### alpha.11 — Roadmap Generator
-
-Система преобразует подтверждённые корневые причины и разрывы эталонной модели в дорожную карту на 90 дней.
-
-### alpha.12 — Executive Timeline
-
-История строится только по сохранённым снимкам Executive Intelligence.
-
-### alpha.13 — Evidence-Based Risk Forecast
-
-Прогноз включается только при наличии минимум трёх исторических снимков. Если истории недостаточно, система показывает `insufficient_history`.
-
-### alpha.14 — AI CIO
-
-Блок **«Что бы сделал CIO в ближайшие 90 дней»** ранжирует приоритетные решения по подтверждённым отклонениям.
-
-## Архитектура аудита
+## Архитектура
 
 ```text
+Bitrix24 Browser + REST
+        ↓
 Deep REST Evidence
-→ Automatic Capability Discovery
-→ Evidence-Based Audit
-→ Knowledge Base & Methodology
-→ Reference Model Audit
-→ Process Mining
-→ AI Process Optimizer
-→ Executive Intelligence
-→ Management Conclusion
-→ Advanced Business Value Engine
-→ Executive KPI Center
-→ Root Cause Analysis
-→ Roadmap Generator
-→ Executive Timeline
-→ Evidence-Based Risk Forecast
-→ AI CIO
-→ Resilient Executive Brief
+        ↓
+Capability Discovery
+        ↓
+Evidence Engine + Knowledge Base
+        ↓
+Reference Model Audit
+        ↓
+Process Mining + Process Optimizer
+        ↓
+Executive Intelligence
+        ↓
+Management Conclusion + KPI + Root Cause
+        ↓
+Business Value + Roadmap + Timeline + Risk Forecast + AI CIO
+        ↓
+#management
 ```
-
-Ручные пожелания не устанавливают статус и не влияют на итоговую оценку.
 
 ## Основные интерфейсы
 
@@ -112,6 +104,7 @@ http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 http://SERVER_IP:8090/reports-ui             Reports & Export
 http://SERVER_IP:8090/automation             Scheduling & Automation
 http://SERVER_IP:8090/system                 System Health & Data Quality
+http://SERVER_IP:8090/about                  Информация о релизе
 ```
 
 ## Конфигурация
@@ -138,13 +131,15 @@ REFERENCE_MODEL_PROFILE=manufacturing_enterprise
 
 ```bash
 cd /opt/ai-bit
+
 git switch agent/import-current-ai-bit
 git pull
+
 docker compose build --no-cache browser-worker
 docker compose up -d browser-worker
 ```
 
-Проверка:
+## Проверка версии
 
 ```bash
 curl -sS http://127.0.0.1:8090/health | jq
@@ -155,29 +150,41 @@ curl -sS http://127.0.0.1:8090/health | jq
 ```json
 {
   "status": "ok",
-  "version": "2.0.0-alpha.15",
+  "version": "2.1.0",
   "product": "AI-BIT Enterprise",
   "developer": "Коваленко А.С.",
   "contact": "pizzakov@gmail.com"
 }
 ```
 
-## Проверка Process Optimizer
+Информация о релизе:
+
+```bash
+curl -sS http://127.0.0.1:8090/about | jq
+```
+
+## Полный пересчёт
 
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
-  -o /tmp/executive-alpha15.json
+  -o /tmp/executive-2.1.0.json
 ```
+
+Краткая проверка:
 
 ```bash
 jq '{
-  status: .process_optimizer.status,
-  overall_score: .process_optimizer.overall_score,
-  summary: .process_optimizer.summary,
-  processes: .process_optimizer.processes,
-  top_recommendations: .process_optimizer.top_recommendations
-}' /tmp/executive-alpha15.json
+  version,
+  conclusion: .management_conclusion,
+  kpi: .executive_kpi.summary,
+  process_optimizer: .process_optimizer.summary,
+  roadmap: .transformation_roadmap,
+  timeline: .executive_timeline.status,
+  forecast: .risk_forecast.status,
+  ai_cio: .ai_cio.recommendations,
+  business_value: .business_value.total
+}' /tmp/executive-2.1.0.json
 ```
 
 ## Разработчик
@@ -185,4 +192,5 @@ jq '{
 ```text
 Коваленко А.С.
 pizzakov@gmail.com
+© 2026. Все права защищены.
 ```
