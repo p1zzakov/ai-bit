@@ -40,8 +40,12 @@ def main() -> None:
         source = SOURCE_PROVIDER.read_text(encoding='utf-8')
         source = source.replace('VERSION = "3.6.1"', 'VERSION = "4.3.0"')
         source = source.replace(
-            'calls_result[name] = {\n                "success": not bool(response.get("error")),',
-            'call_id = str(row.get("id") or name)\n            annotations = discovered[name].get("annotations") if isinstance(discovered[name], dict) else {}\n            if not isinstance(annotations, dict) or annotations.get("readOnlyHint") is not True:\n                errors.append({"tool": name, "id": call_id, "error": "tool_not_declared_read_only"})\n                continue\n            calls_result[call_id] = {\n                "tool": name,\n                "success": not bool(response.get("error")),',
+            '            started = time.monotonic()\n            response = client.request("tools/call", {"name": name, "arguments": arguments})',
+            '            call_id = str(row.get("id") or name)\n            annotations = discovered[name].get("annotations") if isinstance(discovered[name], dict) else {}\n            if not isinstance(annotations, dict) or annotations.get("readOnlyHint") is not True:\n                errors.append({"tool": name, "id": call_id, "error": "tool_not_declared_read_only"})\n                continue\n            started = time.monotonic()\n            response = client.request("tools/call", {"name": name, "arguments": arguments})',
+        )
+        source = source.replace(
+            '            calls_result[name] = {\n                "success": not bool(response.get("error")),',
+            '            calls_result[call_id] = {\n                "tool": name,\n                "success": not bool(response.get("error")),',
         )
         SOURCE_PROVIDER.write_text(source, encoding='utf-8')
 
