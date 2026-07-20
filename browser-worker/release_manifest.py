@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-VERSION = "2.2.0"
+VERSION = "3.0.0"
 PRODUCT = "AI-BIT Enterprise"
-EDITION = "Executive UX & Bitrix Digital Passport"
+EDITION = "Linear Design System & Unified Layout"
 DEVELOPER = "Коваленко А.С."
 CONTACT = "pizzakov@gmail.com"
 
@@ -19,6 +19,8 @@ def get_release_manifest() -> dict[str, Any]:
         "copyright": "© 2026 Коваленко А.С. Все права защищены.",
         "principle": "Выводы формируются по подтверждённым данным; неизвестное не считается отсутствующим.",
         "capabilities": [
+            "Linear Light Design System",
+            "Unified Layout Engine",
             "Compact Executive Report",
             "Bitrix Digital Passport",
             "Executive Intelligence",
@@ -41,11 +43,11 @@ def get_release_manifest() -> dict[str, Any]:
             "System Health & Data Quality",
         ],
         "release_focus": [
-            "управленческая сводка за 30 секунд",
-            "трёхуровневая подача информации без перегрузки руководителя",
-            "отдельные аналитические страницы для глубокой детализации",
-            "цифровой паспорт Bitrix24 на одном экране",
-            "доказательный аудит и прозрачная экономика внедрения",
+            "единая светлая дизайн-система в стиле Linear",
+            "облегчённый sidebar, карточки, кнопки и типографика",
+            "устранение вложенного Unified Admin и дублирования бокового меню",
+            "безопасная навигация executive-страниц через верхний уровень окна",
+            "единый визуальный язык для управленческих и технических разделов",
         ],
         "interfaces": {
             "management": "/#management",
