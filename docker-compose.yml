@@ -29,6 +29,7 @@ services:
     volumes:
       - ./reports/ui:/app/artifacts
       - ./data/browser-state:/app/state
+      - ./bin:/app/bin:ro
     shm_size: "1gb"
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/health')\""]
