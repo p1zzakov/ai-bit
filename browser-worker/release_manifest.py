@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 PRODUCT = "AI-BIT Enterprise"
-EDITION = "Intelligent Transformation Suite"
+EDITION = "Executive UX & Bitrix Digital Passport"
 DEVELOPER = "Коваленко А.С."
 CONTACT = "pizzakov@gmail.com"
 
@@ -19,6 +19,8 @@ def get_release_manifest() -> dict[str, Any]:
         "copyright": "© 2026 Коваленко А.С. Все права защищены.",
         "principle": "Выводы формируются по подтверждённым данным; неизвестное не считается отсутствующим.",
         "capabilities": [
+            "Compact Executive Report",
+            "Bitrix Digital Passport",
             "Executive Intelligence",
             "Management Conclusion",
             "Executive KPI Center",
@@ -39,10 +41,19 @@ def get_release_manifest() -> dict[str, Any]:
             "System Health & Data Quality",
         ],
         "release_focus": [
-            "единая управленческая сводка без обязательной зависимости от LLM",
-            "доказательный аудит Bitrix24",
-            "оптимизация процессов и поиск узких мест",
-            "экономическое обоснование цифровой трансформации",
-            "дорожная карта и приоритеты для руководства",
+            "управленческая сводка за 30 секунд",
+            "трёхуровневая подача информации без перегрузки руководителя",
+            "отдельные аналитические страницы для глубокой детализации",
+            "цифровой паспорт Bitrix24 на одном экране",
+            "доказательный аудит и прозрачная экономика внедрения",
         ],
+        "interfaces": {
+            "management": "/#management",
+            "digital_passport": "/digital-passport",
+            "process_optimizer": "/process-optimizer",
+            "ai_cio": "/ai-cio",
+            "roadmap": "/transformation-roadmap",
+            "risk_forecast": "/risk-forecast",
+            "business_value": "/business-value",
+        },
     }
