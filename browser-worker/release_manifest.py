@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
-VERSION = "3.2.0"
+VERSION = "3.2.1"
 PRODUCT = "AI-BIT Enterprise"
-EDITION = "Complete Readable Linear UI Refactor"
+EDITION = "Automation History Readability Fix"
 DEVELOPER = "Коваленко А.С."
 CONTACT = "pizzakov@gmail.com"
 
@@ -43,11 +43,10 @@ def get_release_manifest() -> dict[str, Any]:
             "System Health & Data Quality",
         ],
         "release_focus": [
-            "устранение оставшихся тёмных блоков во всех основных разделах",
-            "единые белые карточки, таблицы, формы, риски и рекомендации",
-            "повышенная контрастность Operations, Architecture, Intelligence, Automation и System",
-            "сохранение защиты от вложенного Unified Admin и двойного sidebar",
-            "единый читаемый визуальный язык для всей платформы",
+            "светлый и читаемый журнал запусков Scheduling & Automation",
+            "белые карточки событий с нейтральными границами и hover-состоянием",
+            "контрастные статусы ok, error и running без тёмных плашек",
+            "сохранение единой Linear-дизайн-системы и защиты от двойного sidebar",
         ],
         "interfaces": {
             "management": "/#management",
