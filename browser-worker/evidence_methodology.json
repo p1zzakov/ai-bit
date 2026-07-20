@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0-alpha.4",
+  "title": "AI-BIT Evidence-Based Implementation Methodology",
+  "description": "Доказательная методика оценки внедрения Bitrix24. Итоговый статус формируется только по данным, которые система получила и проверила самостоятельно.",
+  "status_rules": {
+    "implemented": "Найдены независимые подтверждения конфигурации и фактического использования.",
+    "partial": "Найдена конфигурация или отдельные факты, но полный маршрут либо использование не подтверждены.",
+    "missing": "Все обязательные технические источники доступны и проверены, подтверждений конфигурации и использования не найдено.",
+    "unknown": "Недостаточно доступных источников для доказательного вывода. Не считается отсутствием."
+  },
+  "source_catalog": {
+    "deep_rest": {"title": "Прямые REST-проверки сущностей Bitrix24", "artifact": "deep-rest-evidence/latest.json", "weight": 5},
+    "crawl": {"title": "Карта и содержимое портала", "artifact": "history", "weight": 1},
+    "business_architecture": {"title": "Бизнес-архитектура и шаблоны процессов", "artifact": "business-architecture/latest.json", "weight": 2},
+    "process_mining": {"title": "Фактические запуски и процессная активность", "artifact": "process-mining/latest.json", "weight": 3},
+    "operations": {"title": "Операционная активность пользователей", "artifact": "operations/latest.json", "weight": 2},
+    "capability_discovery": {"title": "Автоматическое обнаружение сущностей", "artifact": "capability-discovery/latest.json", "weight": 2}
+  },
+  "capabilities": {
+    "electronic_document_exchange": {"required_sources": ["deep_rest","crawl","business_architecture"], "usage_sources": ["deep_rest","process_mining"]},
+    "contract_approval": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "internal_memos": {"required_sources": ["deep_rest","crawl","business_architecture"], "usage_sources": ["deep_rest","process_mining"]},
+    "user_provisioning_request": {"required_sources": ["deep_rest","business_architecture","operations"], "usage_sources": ["deep_rest","process_mining","operations"]},
+    "business_processes": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "employee_onboarding": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "employee_offboarding": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "leave_requests": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "business_trips": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "it_service_requests": {"required_sources": ["deep_rest","business_architecture","operations"], "usage_sources": ["deep_rest","process_mining","operations"]},
+    "access_requests": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "purchase_requests": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "payment_approval": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "repair_requests": {"required_sources": ["deep_rest","business_architecture","process_mining"], "usage_sources": ["deep_rest","process_mining"]},
+    "knowledge_base": {"required_sources": ["deep_rest","crawl","operations"], "usage_sources": ["deep_rest","operations"]}
+  }
+}

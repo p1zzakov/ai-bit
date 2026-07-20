@@ -1,0 +1,35 @@
+{
+  "default_profile": "manufacturing_enterprise",
+  "profiles": {
+    "manufacturing_enterprise": {
+      "title": "Производственное предприятие",
+      "description": "Эталонная модель цифрового управления производственной компанией на базе Bitrix24.",
+      "capabilities": [
+        {"id":"task_management","title":"Управление задачами и поручениями","domain":"Управление","weight":8,"required":true,"evidence":["operations.summary.open","operations.summary.users"]},
+        {"id":"crm_sales","title":"CRM и управление продажами","domain":"Продажи","weight":8,"required":true,"evidence":["business_architecture.domains.crm"]},
+        {"id":"business_processes","title":"Автоматизированные бизнес-процессы","domain":"Процессы","weight":8,"required":true,"evidence":["business_architecture.domains.business_processes"]},
+        {"id":"electronic_document_exchange","title":"Электронный обмен документами","domain":"Документооборот","weight":9,"required":true},
+        {"id":"contract_approval","title":"Согласование договоров","domain":"Документооборот","weight":10,"required":true},
+        {"id":"internal_memos","title":"Служебные записки","domain":"Документооборот","weight":7,"required":true},
+        {"id":"user_provisioning_request","title":"Заявка на создание пользователя в AD и 1С","domain":"Внутренние заявки","weight":9,"required":true},
+        {"id":"employee_onboarding","title":"Приём и адаптация сотрудника","domain":"HR","weight":6,"required":true},
+        {"id":"employee_offboarding","title":"Увольнение и отзыв доступов","domain":"HR","weight":7,"required":true},
+        {"id":"leave_requests","title":"Отпуска и отсутствия","domain":"HR","weight":5,"required":true},
+        {"id":"business_trips","title":"Командировки","domain":"HR","weight":4,"required":false},
+        {"id":"it_service_requests","title":"Заявки в ИТ-службу","domain":"Внутренние заявки","weight":7,"required":true},
+        {"id":"access_requests","title":"Заявки на доступы и изменение прав","domain":"Внутренние заявки","weight":7,"required":true},
+        {"id":"purchase_requests","title":"Заявки на закуп","domain":"Закупки","weight":7,"required":true},
+        {"id":"payment_approval","title":"Согласование оплат","domain":"Финансы","weight":8,"required":true},
+        {"id":"repair_requests","title":"Заявки на ремонт и обслуживание","domain":"Эксплуатация","weight":6,"required":true},
+        {"id":"knowledge_base","title":"База знаний и регламенты","domain":"Управление знаниями","weight":5,"required":true},
+        {"id":"management_dashboards","title":"Управленческие показатели и контроль","domain":"Управление","weight":7,"required":true,"evidence":["operations.summary","business_architecture.enterprise_health"]},
+        {"id":"automation_monitoring","title":"Контроль автоматизации и узких мест","domain":"Процессы","weight":5,"required":true,"evidence":["process_mining.summary"]}
+      ]
+    },
+    "generic_company": {
+      "title": "Универсальная компания",
+      "description": "Базовая эталонная модель для компаний без отраслевой специализации.",
+      "inherits": "manufacturing_enterprise"
+    }
+  }
+}
