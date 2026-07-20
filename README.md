@@ -4,21 +4,59 @@ AI-BIT Enterprise — read-only платформа доказательного 
 
 ## Текущая версия
 
-**AI-BIT Enterprise `2.1.0` — Intelligent Transformation Suite**
+**AI-BIT Enterprise `2.2.0` — Executive UX & Bitrix Digital Passport**
 
 Главный принцип продукта:
 
 > неизвестное не считается отсутствующим, а управленческие выводы формируются только по подтверждённым данным.
 
-## Что входит в 2.1.0
+## Что изменилось в 2.2.0
+
+### Разгруженный отчёт для руководства
+
+Страница `#management` переведена на трёхуровневую модель:
+
+1. **30 секунд** — общая оценка, критичные проблемы, просрочка, задачи без срока и потенциальный экономический эффект;
+2. **управленческий вывод** — краткое объяснение ситуации и одно следующее действие;
+3. **детализация по запросу** — ссылки на специализированные аналитические страницы и раскрываемые доказательства.
+
+Тяжёлые блоки больше не выводятся подряд на главной странице руководителя.
+
+### Bitrix Digital Passport
+
+Отдельный экран цифрового паспорта показывает на одном экране:
+
+- общий индекс внедрения;
+- CRM;
+- документооборот;
+- автоматизацию;
+- бизнес-процессы;
+- исполнительскую дисциплину;
+- управленческую дисциплину;
+- покрытие эталонной модели;
+- использование системы;
+- просрочку и задачи без срока.
+
+Показатель без подтверждённых данных отображается как `нет данных`, а не заменяется выдуманной оценкой.
+
+### Специализированные страницы
+
+- `/digital-passport` — цифровой паспорт Bitrix24;
+- `/process-optimizer` — рейтинг процессов, узкие места и рекомендации;
+- `/ai-cio` — приоритетные управленческие решения на 90 дней;
+- `/transformation-roadmap` — этапы, сроки и ответственные роли;
+- `/risk-forecast` — прогноз по накопленной исторической динамике;
+- `/business-value` — экономика внедрения и состав ожидаемого эффекта.
+
+## Функциональные контуры
 
 ### Executive Intelligence
 
 - управленческое заключение без технических терминов;
 - Executive KPI Center;
 - Root Cause Analysis;
-- AI CIO — приоритетные решения на 90 дней;
-- детерминированный Executive Summary без обязательной зависимости от Groq.
+- AI CIO;
+- краткая сводка без обязательной зависимости от Groq.
 
 ### Process Intelligence
 
@@ -58,15 +96,6 @@ AI-BIT Enterprise — read-only платформа доказательного 
 - статусы `implemented`, `partial`, `missing`, `unknown`;
 - ручные пожелания не влияют на итоговую оценку.
 
-### Platform
-
-- Unified Enterprise Admin;
-- Reports & Export;
-- Scheduling & Automation;
-- System Health & Data Quality;
-- исторические снимки;
-- безопасный fallback при недоступности Groq.
-
 ## Архитектура
 
 ```text
@@ -88,14 +117,20 @@ Management Conclusion + KPI + Root Cause
         ↓
 Business Value + Roadmap + Timeline + Risk Forecast + AI CIO
         ↓
-#management
+Compact #management + Specialized Portals + Digital Passport
 ```
 
 ## Основные интерфейсы
 
 ```text
 http://SERVER_IP:8090/                       Unified Enterprise Admin
-http://SERVER_IP:8090/#management            Сводка руководителя
+http://SERVER_IP:8090/#management            Краткий отчёт для руководства
+http://SERVER_IP:8090/digital-passport       Цифровой паспорт Bitrix24
+http://SERVER_IP:8090/process-optimizer      AI Process Optimizer
+http://SERVER_IP:8090/ai-cio                 AI CIO
+http://SERVER_IP:8090/transformation-roadmap Дорожная карта
+http://SERVER_IP:8090/risk-forecast          Прогноз рисков
+http://SERVER_IP:8090/business-value         Бизнес-эффект
 http://SERVER_IP:8090/executive-intelligence Executive Intelligence Suite
 http://SERVER_IP:8090/dashboard              Аудит внедрения
 http://SERVER_IP:8090/operations             Operational Intelligence
@@ -104,7 +139,8 @@ http://SERVER_IP:8090/business-architecture  Business Architecture Audit
 http://SERVER_IP:8090/reports-ui             Reports & Export
 http://SERVER_IP:8090/automation             Scheduling & Automation
 http://SERVER_IP:8090/system                 System Health & Data Quality
-http://SERVER_IP:8090/about                  Информация о релизе
+http://SERVER_IP:8090/about                  HTML-страница о системе
+http://SERVER_IP:8090/about/meta             JSON-метаданные
 ```
 
 ## Конфигурация
@@ -143,24 +179,22 @@ docker compose up -d browser-worker
 
 ```bash
 curl -sS http://127.0.0.1:8090/health | jq
+curl -sS http://127.0.0.1:8090/about/meta | jq
 ```
 
-Ожидаем:
+Ожидаем версию:
 
 ```json
 {
-  "status": "ok",
-  "version": "2.1.0",
-  "product": "AI-BIT Enterprise",
-  "developer": "Коваленко А.С.",
-  "contact": "pizzakov@gmail.com"
+  "version": "2.2.0"
 }
 ```
 
-Информация о релизе:
+Проверка новых маршрутов:
 
 ```bash
-curl -sS http://127.0.0.1:8090/about | jq
+curl -sS http://127.0.0.1:8090/openapi.json \
+  | jq '.paths | keys | map(select(test("digital-passport|process-optimizer|ai-cio|transformation-roadmap|risk-forecast|business-value")))'
 ```
 
 ## Полный пересчёт
@@ -168,10 +202,8 @@ curl -sS http://127.0.0.1:8090/about | jq
 ```bash
 curl -sS -X POST \
   http://127.0.0.1:8090/executive-intelligence/collect \
-  -o /tmp/executive-2.1.0.json
+  -o /tmp/executive-2.2.0.json
 ```
-
-Краткая проверка:
 
 ```bash
 jq '{
@@ -180,11 +212,10 @@ jq '{
   kpi: .executive_kpi.summary,
   process_optimizer: .process_optimizer.summary,
   roadmap: .transformation_roadmap,
-  timeline: .executive_timeline.status,
   forecast: .risk_forecast.status,
   ai_cio: .ai_cio.recommendations,
   business_value: .business_value.total
-}' /tmp/executive-2.1.0.json
+}' /tmp/executive-2.2.0.json
 ```
 
 ## Разработчик
