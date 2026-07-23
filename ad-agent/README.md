@@ -1,50 +1,82 @@
-# AI-BIT Enterprise 6.2 — AD Discovery Agent / Sprint 1
+# AI-BIT Enterprise 6.2 — Discovery Engine / Sprint 1
 
-Read-only foundation for evidence-based Active Directory discovery.
+Read-only plugin foundation for evidence-based infrastructure discovery. Active Directory is the first provider.
 
-## Sprint 1 delivered
+## Architecture
 
-- prerequisite validation for ActiveDirectory and GroupPolicy modules;
-- read-only collection of Forest, Domains, Domain Controllers, OU and GPO summaries;
+See `docs/ARCHITECTURE.md`.
+
+```text
+Environment → Collector plugin → Raw evidence → Normalizer → Snapshot → SHA-256
+```
+
+Compatibility baseline: Windows PowerShell 5.1. The engine does not use `$IsWindows` or PowerShell 7-only syntax.
+
+## Delivered
+
+- universal collector plugin contract;
+- automatic collector discovery;
+- dependency checks per collector;
+- states `ok`, `configuration_required`, `error`, `skipped`;
+- Forest, Domains, Domain Controllers, OU and GPO plugins;
 - isolated collector failures;
-- versioned JSON snapshot contract;
-- deterministic canonicalization and SHA-256 fingerprint;
-- JSON Schema 2020-12;
-- offline validation script;
-- live validation script for a domain-connected Windows host.
+- normalized versioned snapshot `1.1`;
+- deterministic canonicalization;
+- SHA-256 fingerprint;
+- offline engine tests;
+- live AD collection runner.
 
 ## Requirements
 
-Windows Server 2019+ or Windows 10/11 with RSAT, Windows PowerShell 5.1 or PowerShell 7, and a domain account with read permissions. No write cmdlets are used.
+- Windows PowerShell 5.1 or newer;
+- domain connectivity for live collection;
+- ActiveDirectory module for AD plugins;
+- GroupPolicy module for the GPO plugin;
+- read-only domain permissions.
+
+The engine does not require `Install-WindowsFeature`. It only checks whether modules are already available.
 
 ## Quick start
 
 ```powershell
 cd C:\AI-BIT\ad-agent
-Copy-Item .\config\agent.example.json .\config\agent.json
 Set-ExecutionPolicy -Scope Process Bypass
-.\scripts\Invoke-Preflight.ps1
-.\collectors\Get-AdDiscoverySnapshot.ps1 -OutputPath .\data\snapshots\ad-snapshot.json
-.\scripts\Invoke-Sprint1Validation.ps1
+
+.\tests\Invoke-OfflineTests.ps1
+
+.\collectors\Get-AdDiscoverySnapshot.ps1 `
+  -OutputPath .\data\snapshots\ad-snapshot.json
 ```
 
-Without Group Policy tools:
+Run only selected plugins:
 
 ```powershell
-.\scripts\Invoke-Preflight.ps1 -SkipGpo
-.\collectors\Get-AdDiscoverySnapshot.ps1 -SkipGpo
+.\collectors\Get-AdDiscoverySnapshot.ps1 `
+  -IncludeCollector forest,domains,domain_controllers
 ```
 
-Offline validation on a non-domain machine:
+Exclude GPO:
 
 ```powershell
-.\scripts\Invoke-Sprint1Validation.ps1 -SkipLiveCollection
+.\collectors\Get-AdDiscoverySnapshot.ps1 `
+  -ExcludeCollector gpo_summary
 ```
 
-## Expected output
+Missing modules do not crash the snapshot. The affected collector returns `configuration_required` with a reason.
 
-The snapshot contains `payload` and `fingerprint`. Each collector returns `ok` or `error`; one failed collector does not erase evidence from successful collectors.
+## Expected collector result
 
-## Out of scope for Sprint 1
+```json
+{
+  "name": "forest",
+  "version": "1.0.0",
+  "status": "ok",
+  "source": "Forest.collector.ps1",
+  "reason": null,
+  "data": {}
+}
+```
 
-Windows Service, scheduler, mTLS transport, MCP upload, DNS/DHCP/replication/SYSVOL/Event Log collectors and server-side Evidence Engine ingestion.
+## Out of scope
+
+Windows Service, scheduler, mTLS, MCP transport, DNS, DHCP, replication, SYSVOL, Event Log and server-side ingestion remain outside Sprint 1.
