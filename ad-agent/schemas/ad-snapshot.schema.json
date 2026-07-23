@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-bit.local/schemas/ad-snapshot-1.0.0.json",
+  "title": "AI-BIT AD Discovery Snapshot",
+  "type": "object",
+  "required": ["payload", "fingerprint"],
+  "properties": {
+    "payload": {
+      "type": "object",
+      "required": ["schema_version", "agent_version", "snapshot_id", "collected_at_utc", "host", "preflight", "collectors"],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "agent_version": {"const": "6.2.0"},
+        "snapshot_id": {"type": "string", "format": "uuid"},
+        "collected_at_utc": {"type": "string", "format": "date-time"},
+        "host": {"type": "object"},
+        "preflight": {"type": "object"},
+        "collectors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status", "started_at_utc", "finished_at_utc", "data"],
+            "properties": {"status": {"enum": ["ok", "error"]}}
+          }
+        }
+      }
+    },
+    "fingerprint": {
+      "type": "object",
+      "required": ["algorithm", "value", "canonicalization"],
+      "properties": {
+        "algorithm": {"const": "sha256"},
+        "value": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}
