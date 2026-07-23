@@ -27,6 +27,9 @@ def safe_id(value: str) -> str:
 
 
 class DiscoveryService:
+    SNAPSHOT_NAMESPACE = "discovery/snapshots"
+    LATEST_NAMESPACE = "discovery/latest"
+
     def __init__(self, storage: FileSystemStorage) -> None:
         self.storage = storage
 
@@ -39,19 +42,19 @@ class DiscoveryService:
             raise HTTPException(422, "Snapshot fingerprint mismatch")
         host = payload.get("host") or {}
         agent_id = safe_id(str(host.get("computer_name") or "unknown"))
-        key = f"discovery/snapshots/{agent_id}/{calculated}.json"
-        duplicate = self.storage.exists(key)
+        snapshot_key = f"{agent_id}/{calculated}"
+        duplicate = self.storage.read_json(self.SNAPSHOT_NAMESPACE, snapshot_key) is not None
         if not duplicate:
-            self.storage.write_json(key, snapshot.model_dump(mode="json"))
+            self.storage.write_json(self.SNAPSHOT_NAMESPACE, snapshot_key, snapshot.model_dump(mode="json"))
             latest = {
                 "agent_id": agent_id,
                 "fingerprint": calculated,
                 "snapshot_id": payload.get("snapshot_id"),
                 "collected_at_utc": payload.get("collected_at_utc"),
                 "stored_at_utc": datetime.now(UTC).isoformat(),
-                "key": key,
+                "snapshot_key": snapshot_key,
             }
-            self.storage.write_json(f"discovery/latest/{agent_id}.json", latest)
+            self.storage.write_json(self.LATEST_NAMESPACE, agent_id, latest)
         return {
             "status": "duplicate" if duplicate else "accepted",
             "agent_id": agent_id,
@@ -61,13 +64,20 @@ class DiscoveryService:
         }
 
     def latest(self, agent_id: str) -> DiscoverySnapshot:
-        metadata = self.storage.read_json(f"discovery/latest/{safe_id(agent_id)}.json")
-        return DiscoverySnapshot.model_validate(self.storage.read_json(metadata["key"]))
+        metadata = self.storage.read_json(self.LATEST_NAMESPACE, safe_id(agent_id))
+        if not metadata:
+            raise HTTPException(404, "Discovery agent not found")
+        raw = self.storage.read_json(self.SNAPSHOT_NAMESPACE, metadata["snapshot_key"])
+        if not raw:
+            raise HTTPException(404, "Latest snapshot not found")
+        return DiscoverySnapshot.model_validate(raw)
 
     def agents(self) -> list[dict[str, Any]]:
         result = []
-        for key in self.storage.list_keys("discovery/latest"):
-            result.append(self.storage.read_json(key))
+        for key in self.storage.list_keys(self.LATEST_NAMESPACE):
+            row = self.storage.read_json(self.LATEST_NAMESPACE, key)
+            if row:
+                result.append(row)
         return sorted(result, key=lambda row: row.get("stored_at_utc", ""), reverse=True)
 
     def graph(self, agent_id: str) -> InfrastructureGraph:
@@ -76,13 +86,11 @@ class DiscoveryService:
         collectors = {item.get("name"): item for item in payload.get("collectors") or []}
         nodes: list[GraphNode] = []
         edges: list[GraphEdge] = []
-
         forest_data = (collectors.get("forest") or {}).get("data") or {}
         forest_name = forest_data.get("name") or forest_data.get("root_domain")
         forest_id = f"forest:{forest_name}" if forest_name else None
         if forest_id:
             nodes.append(GraphNode(id=forest_id, type="forest", label=str(forest_name), properties=forest_data))
-
         domains = (collectors.get("domains") or {}).get("data") or []
         for domain in domains:
             name = domain.get("dns_root") or domain.get("distinguished_name")
@@ -90,16 +98,13 @@ class DiscoveryService:
             nodes.append(GraphNode(id=node_id, type="domain", label=str(name), properties=domain))
             if forest_id:
                 edges.append(GraphEdge(source=forest_id, target=node_id, relation="contains"))
-
         dcs = (collectors.get("domain_controllers") or {}).get("data") or []
         for dc in dcs:
             label = dc.get("hostname") or dc.get("name")
             node_id = f"domain_controller:{label}"
             nodes.append(GraphNode(id=node_id, type="domain_controller", label=str(label), properties=dc))
-            domain = dc.get("domain")
-            if domain:
-                edges.append(GraphEdge(source=f"domain:{domain}", target=node_id, relation="hosts"))
-
+            if dc.get("domain"):
+                edges.append(GraphEdge(source=f"domain:{dc['domain']}", target=node_id, relation="hosts"))
         ous = (collectors.get("organizational_units") or {}).get("data") or []
         for ou in ous:
             dn = ou.get("distinguished_name")
@@ -107,24 +112,14 @@ class DiscoveryService:
             nodes.append(GraphNode(id=node_id, type="organizational_unit", label=str(ou.get("name") or dn), properties=ou))
             if domains:
                 edges.append(GraphEdge(source=f"domain:{domains[0].get('dns_root')}", target=node_id, relation="contains"))
-
         gpos = (collectors.get("gpo_summary") or {}).get("data") or []
         for gpo in gpos:
             gid = gpo.get("id") or gpo.get("display_name")
             node_id = f"gpo:{gid}"
             nodes.append(GraphNode(id=node_id, type="group_policy", label=str(gpo.get("display_name") or gid), properties=gpo))
-            domain = gpo.get("domain_name")
-            if domain:
-                edges.append(GraphEdge(source=f"domain:{domain}", target=node_id, relation="defines"))
-
+            if gpo.get("domain_name"):
+                edges.append(GraphEdge(source=f"domain:{gpo['domain_name']}", target=node_id, relation="defines"))
         statuses = [item.get("status") for item in payload.get("collectors") or []]
         health = 100 if statuses and all(status == "ok" for status in statuses) else 70
-        summary = {
-            "forest": forest_name,
-            "domains": len(domains),
-            "domain_controllers": len(dcs),
-            "organizational_units": len(ous),
-            "group_policies": len(gpos),
-            "health_score": health,
-        }
+        summary = {"forest": forest_name, "domains": len(domains), "domain_controllers": len(dcs), "organizational_units": len(ous), "group_policies": len(gpos), "health_score": health}
         return InfrastructureGraph(agent_id=agent_id, snapshot_id=str(payload.get("snapshot_id")), fingerprint=snapshot.fingerprint, nodes=nodes, edges=edges, summary=summary)
