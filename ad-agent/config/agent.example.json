@@ -1,0 +1,18 @@
+{
+  "agent_id": "change-me",
+  "agent_version": "6.2.0",
+  "output_path": "./data/snapshots/ad-snapshot.json",
+  "collectors": {
+    "forest": true,
+    "domains": true,
+    "domain_controllers": true,
+    "organizational_units": true,
+    "gpo_summary": true
+  },
+  "transport": {
+    "enabled": false,
+    "endpoint": "https://ai-bit.example.kz/mcp/ad/snapshots",
+    "timeout_seconds": 60,
+    "client_certificate_thumbprint": ""
+  }
+}
