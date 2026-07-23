@@ -7,33 +7,46 @@ function Test-AIBitModule {
 }
 
 function ConvertTo-AIBitCanonicalObject {
-    param([Parameter(ValueFromPipeline=$true)]$InputObject)
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$false, ValueFromPipeline=$true)]
+        [AllowNull()]
+        $InputObject
+    )
+
     process {
-        if ($null -eq $InputObject) { return $null }
+        if ($null -eq $InputObject) {
+            return $null
+        }
+
         if ($InputObject -is [System.Collections.IDictionary]) {
-            $ordered = [ordered]@{}
-            foreach ($key in @($InputObject.Keys | Sort-Object)) {
-                $ordered[$key] = ConvertTo-AIBitCanonicalObject $InputObject[$key]
+            $result = New-Object System.Collections.Specialized.OrderedDictionary
+            $keys = @($InputObject.Keys | ForEach-Object { [string]$_ } | Sort-Object)
+            foreach ($key in $keys) {
+                $value = $InputObject.Item($key)
+                $result.Add($key, (ConvertTo-AIBitCanonicalObject -InputObject $value))
             }
-            return $ordered
+            return $result
         }
+
         if (($InputObject -is [System.Collections.IEnumerable]) -and -not ($InputObject -is [string])) {
-            $items = @()
+            $items = New-Object System.Collections.ArrayList
             foreach ($item in $InputObject) {
-                $items += ,(ConvertTo-AIBitCanonicalObject $item)
+                [void]$items.Add((ConvertTo-AIBitCanonicalObject -InputObject $item))
             }
-            return $items
+            return @($items.ToArray())
         }
-        if (($InputObject -is [psobject]) -and
-            ($InputObject.PSObject.Properties.Count -gt 0) -and
-            -not ($InputObject -is [string]) -and
-            -not ($InputObject -is [ValueType])) {
-            $ordered = [ordered]@{}
-            foreach ($property in @($InputObject.PSObject.Properties.Name | Sort-Object)) {
-                $ordered[$property] = ConvertTo-AIBitCanonicalObject $InputObject.$property
+
+        if (($InputObject -is [System.Management.Automation.PSCustomObject]) -or
+            ($InputObject.GetType().FullName -eq 'System.Management.Automation.PSCustomObject')) {
+            $result = New-Object System.Collections.Specialized.OrderedDictionary
+            $properties = @($InputObject.PSObject.Properties | Sort-Object Name)
+            foreach ($property in $properties) {
+                $result.Add($property.Name, (ConvertTo-AIBitCanonicalObject -InputObject $property.Value))
             }
-            return $ordered
+            return $result
         }
+
         return $InputObject
     }
 }
@@ -136,7 +149,7 @@ function New-AIBitSnapshot {
         collectors = $Results
     }
 
-    $canonical = ConvertTo-AIBitCanonicalObject $payload
+    $canonical = ConvertTo-AIBitCanonicalObject -InputObject $payload
     $canonicalJson = $canonical | ConvertTo-Json -Depth 20 -Compress
     return [ordered]@{
         fingerprint_algorithm = 'sha256'
