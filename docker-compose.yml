@@ -24,14 +24,20 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    command: >-
+      sh -c "python /app/discovery_ingestion_patch.py &&
+      uvicorn app:app --host 0.0.0.0 --port 8090"
     ports:
       - "8090:8090"
     volumes:
       - ./reports/ui:/app/artifacts
       - ./data/browser-state:/app/state
+      - ./data/discovery:/app/data/discovery
+      - ./browser-worker/discovery:/app/discovery:ro
+      - ./browser-worker/discovery_ingestion_patch.py:/app/discovery_ingestion_patch.py:ro
     shm_size: "1gb"
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/health')\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/api/v1/discovery/health')\""]
       interval: 30s
       timeout: 10s
       retries: 3
