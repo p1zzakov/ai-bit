@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from . import __version__
+from .api.infrastructure_ui import router as infrastructure_ui_router
 from .api.router import api_router
 from .core.config import get_settings
 from .core.lifecycle import lifespan
@@ -22,13 +23,15 @@ def create_app() -> FastAPI:
         openapi_url="/api/openapi.json",
     )
     application.include_router(api_router, prefix=settings.api_prefix)
+    application.include_router(infrastructure_ui_router)
 
     @application.get("/", include_in_schema=False)
     def root() -> dict[str, str]:
         return {
             "service": settings.app_name,
             "version": settings.version,
-            "status": "platform-core",
+            "status": "infrastructure-discovery",
+            "infrastructure_ui": "/infrastructure",
         }
 
     return application
