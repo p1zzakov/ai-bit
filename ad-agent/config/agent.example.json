@@ -1,0 +1,31 @@
+{
+  "agent": {
+    "name": "ai-bit-ad-agent",
+    "version": "6.2.0",
+    "environment": "development"
+  },
+  "collection": {
+    "interval_minutes": 60,
+    "timeout_seconds": 120,
+    "collectors": [
+      "forest",
+      "domains",
+      "domain_controllers",
+      "organizational_units",
+      "gpo_summary"
+    ]
+  },
+  "output": {
+    "directory": "./data/snapshots",
+    "retain_snapshots": 30,
+    "pretty_json": true
+  },
+  "transport": {
+    "enabled": false,
+    "endpoint": "https://ai-bit.example.local/api/v1/ad/snapshots",
+    "mtls": {
+      "enabled": false,
+      "certificate_thumbprint": ""
+    }
+  }
+}
