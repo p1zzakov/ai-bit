@@ -10,6 +10,7 @@ COPY pyproject.toml ./
 RUN pip install .
 
 COPY app ./app
+COPY tests ./tests
 
 RUN mkdir -p /app/data /app/plugins
 
