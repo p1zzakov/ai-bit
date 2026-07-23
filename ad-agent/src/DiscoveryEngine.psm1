@@ -15,9 +15,7 @@ function ConvertTo-AIBitCanonicalObject {
     )
 
     process {
-        if ($null -eq $InputObject) {
-            return $null
-        }
+        if ($null -eq $InputObject) { return $null }
 
         if ($InputObject -is [System.Collections.IDictionary]) {
             $result = New-Object System.Collections.Specialized.OrderedDictionary
@@ -58,9 +56,7 @@ function Get-AIBitSha256 {
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($Text)
         return (($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) -join '')
     }
-    finally {
-        $sha.Dispose()
-    }
+    finally { $sha.Dispose() }
 }
 
 function Import-AIBitCollectors {
@@ -98,9 +94,7 @@ function Invoke-AIBitCollector {
     }
 
     try {
-        foreach ($module in $requiredModules) {
-            Import-Module $module -ErrorAction Stop
-        }
+        foreach ($module in $requiredModules) { Import-Module $module -ErrorAction Stop }
         $data = & $Collector.Collect
         return [ordered]@{
             name = $Collector.Name
@@ -164,7 +158,14 @@ function Export-AIBitSnapshot {
         [Parameter(Mandatory=$true)][string]$Path
     )
 
-    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    if ([System.IO.Path]::IsPathRooted($Path)) {
+        $fullPath = [System.IO.Path]::GetFullPath($Path)
+    }
+    else {
+        $basePath = (Get-Location).ProviderPath
+        $fullPath = [System.IO.Path]::GetFullPath((Join-Path $basePath $Path))
+    }
+
     $directory = Split-Path -Parent $fullPath
     if (-not (Test-Path $directory)) {
         New-Item -ItemType Directory -Path $directory -Force | Out-Null
