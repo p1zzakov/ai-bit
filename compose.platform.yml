@@ -1,0 +1,21 @@
+services:
+  platform-core:
+    build:
+      context: ./backend
+    container_name: ai-bit-platform-core
+    restart: unless-stopped
+    environment:
+      AIBIT_ENVIRONMENT: development
+      AIBIT_STORAGE_ROOT: /app/data
+      AIBIT_LOG_LEVEL: INFO
+    ports:
+      - "8070:8070"
+    volumes:
+      - ./data/platform:/app/data
+      - ./plugins:/app/plugins:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8070/api/v1/system/health')"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

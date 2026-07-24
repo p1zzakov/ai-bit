@@ -1,4 +1,25 @@
 services:
+  platform-core:
+    build:
+      context: ./backend
+    container_name: ai-bit-platform-core
+    restart: unless-stopped
+    environment:
+      AIBIT_ENVIRONMENT: development
+      AIBIT_STORAGE_ROOT: /app/data
+      AIBIT_LOG_LEVEL: INFO
+    ports:
+      - "8070:8070"
+    volumes:
+      - ./data/platform:/app/data
+      - ./plugins:/app/plugins:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8070/api/v1/system/health')"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   auditor:
     build: .
     container_name: ai-bit-auditor
@@ -24,20 +45,21 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    command: >-
-      sh -c "python /app/discovery_ingestion_patch.py &&
-      uvicorn app:app --host 0.0.0.0 --port 8090"
+    environment:
+      PLATFORM_CORE_URL: ${PLATFORM_CORE_URL:-http://platform-core:8070}
+      PLATFORM_CORE_TIMEOUT_SECONDS: ${PLATFORM_CORE_TIMEOUT_SECONDS:-10}
+    command: uvicorn integrated_app:app --host 0.0.0.0 --port 8090
+    depends_on:
+      platform-core:
+        condition: service_healthy
     ports:
       - "8090:8090"
     volumes:
       - ./reports/ui:/app/artifacts
       - ./data/browser-state:/app/state
-      - ./data/discovery:/app/data/discovery
-      - ./browser-worker/discovery:/app/discovery:ro
-      - ./browser-worker/discovery_ingestion_patch.py:/app/discovery_ingestion_patch.py:ro
     shm_size: "1gb"
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/api/v1/discovery/health')\""]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8090/health')\""]
       interval: 30s
       timeout: 10s
       retries: 3
