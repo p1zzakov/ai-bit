@@ -22,6 +22,44 @@ def integrator_diagnostics_latest() -> dict[str, Any]:
 '''
 
 
+def ensure_integrator_workspace(admin: str) -> str:
+    """Add every Integrator workspace component independently.
+
+    Earlier versions guarded the whole patch by the presence of the navigation
+    button. A partially patched dashboard could therefore contain the button
+    without the iframe or metadata entry, causing ``activate()`` to dereference
+    ``null``. Each component is now repaired separately and activation is
+    defensive against malformed or stale markup.
+    """
+    if 'data-key="integrator"' not in admin:
+        admin = admin.replace(
+            '<button data-key="automation"><span class="icon">A</span><span class="label">Автоматизация</span></button>',
+            '<button data-key="integrator"><span class="icon">T</span><span class="label">Интегратору</span></button><button data-key="automation"><span class="icon">A</span><span class="label">Автоматизация</span></button>',
+            1,
+        )
+
+    if '<iframe class="frame" data-key="integrator"' not in admin:
+        admin = admin.replace(
+            '<iframe class="frame" data-key="automation" data-src="/automation"></iframe>',
+            '<iframe class="frame" data-key="integrator" data-src="/integrator"></iframe><iframe class="frame" data-key="automation" data-src="/automation"></iframe>',
+            1,
+        )
+
+    if "integrator:{title:'Интегратору'" not in admin:
+        admin = admin.replace(
+            "automation:{title:'Scheduling & Automation'",
+            "integrator:{title:'Интегратору',subtitle:'Технические отклонения, доказательства и план исправлений',url:'/integrator'},automation:{title:'Scheduling & Automation'",
+            1,
+        )
+
+    unsafe = "button.classList.add('active');frame.classList.add('active');$('#title').textContent=meta[key].title;$('#subtitle').textContent=meta[key].subtitle;if(!frame.src)"
+    safe = "if(!button||!frame){console.error('AI-BIT workspace is incomplete',key,{button,frame});return}button.classList.add('active');frame.classList.add('active');$('#title').textContent=meta[key].title;$('#subtitle').textContent=meta[key].subtitle;if(!frame.src)"
+    if unsafe in admin:
+        admin = admin.replace(unsafe, safe, 1)
+
+    return admin
+
+
 def main() -> None:
     app = APP.read_text(encoding='utf-8')
     if '@app.get("/integrator"' not in app:
@@ -29,23 +67,7 @@ def main() -> None:
     app = app.replace('"version": "3.2.1"', '"version": "3.4.0"')
     APP.write_text(app, encoding='utf-8')
 
-    admin = ADMIN.read_text(encoding='utf-8')
-    if 'data-key="integrator"' not in admin:
-        admin = admin.replace(
-            '<button data-key="automation"><span class="icon">A</span><span class="label">Автоматизация</span></button>',
-            '<button data-key="integrator"><span class="icon">T</span><span class="label">Интегратору</span></button><button data-key="automation"><span class="icon">A</span><span class="label">Автоматизация</span></button>',
-            1,
-        )
-        admin = admin.replace(
-            '<iframe class="frame" data-key="automation" data-src="/automation"></iframe>',
-            '<iframe class="frame" data-key="integrator" data-src="/integrator"></iframe><iframe class="frame" data-key="automation" data-src="/automation"></iframe>',
-            1,
-        )
-        admin = admin.replace(
-            "automation:{title:'Scheduling & Automation'",
-            "integrator:{title:'Интегратору',subtitle:'Технические отклонения, доказательства и план исправлений',url:'/integrator'},automation:{title:'Scheduling & Automation'",
-            1,
-        )
+    admin = ensure_integrator_workspace(ADMIN.read_text(encoding='utf-8'))
     admin = admin.replace('AI-BIT · 3.2.1', 'AI-BIT · 3.4.0').replace('AI-BIT · 3.2.0', 'AI-BIT · 3.4.0')
     ADMIN.write_text(admin, encoding='utf-8')
 
