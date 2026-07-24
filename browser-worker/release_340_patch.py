@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 APP = Path('/app/app.py')
@@ -23,32 +24,39 @@ def integrator_diagnostics_latest() -> dict[str, Any]:
 
 
 def ensure_integrator_workspace(admin: str) -> str:
-    """Add every Integrator workspace component independently.
+    """Repair every Integrator workspace component independently."""
+    button_marker = '<button data-key="integrator"'
+    iframe_markup = '<iframe class="frame" data-key="integrator" data-src="/integrator"></iframe>'
+    iframe_marker = 'data-key="integrator" data-src="/integrator"'
+    meta_marker = "integrator:{title:'Интегратору'"
 
-    Earlier versions guarded the whole patch by the presence of the navigation
-    button. A partially patched dashboard could therefore contain the button
-    without the iframe or metadata entry, causing ``activate()`` to dereference
-    ``null``. Each component is now repaired separately and activation is
-    defensive against malformed or stale markup.
-    """
-    if 'data-key="integrator"' not in admin:
+    if button_marker not in admin:
+        automation_button = '<button data-key="automation"><span class="icon">A</span><span class="label">Автоматизация</span></button>'
         admin = admin.replace(
-            '<button data-key="automation"><span class="icon">A</span><span class="label">Автоматизация</span></button>',
-            '<button data-key="integrator"><span class="icon">T</span><span class="label">Интегратору</span></button><button data-key="automation"><span class="icon">A</span><span class="label">Автоматизация</span></button>',
+            automation_button,
+            '<button data-key="integrator"><span class="icon">T</span><span class="label">Интегратору</span></button>' + automation_button,
             1,
         )
 
-    if '<iframe class="frame" data-key="integrator"' not in admin:
-        admin = admin.replace(
-            '<iframe class="frame" data-key="automation" data-src="/automation"></iframe>',
-            '<iframe class="frame" data-key="integrator" data-src="/integrator"></iframe><iframe class="frame" data-key="automation" data-src="/automation"></iframe>',
-            1,
-        )
+    if iframe_marker not in admin:
+        automation_iframe = '<iframe class="frame" data-key="automation" data-src="/automation"></iframe>'
+        if automation_iframe in admin:
+            admin = admin.replace(automation_iframe, iframe_markup + automation_iframe, 1)
+        else:
+            # Later release patches may change the iframe order or surrounding markup.
+            # Inject before the viewport closes instead of silently leaving a partial workspace.
+            pattern = r'(</div></main></section></div><script>)'
+            admin, count = re.subn(pattern, iframe_markup + r'\1', admin, count=1)
+            if count != 1:
+                raise RuntimeError('Unable to locate dashboard viewport for Integrator iframe')
 
-    if "integrator:{title:'Интегратору'" not in admin:
+    if meta_marker not in admin:
+        automation_meta = "automation:{title:'Scheduling & Automation'"
+        if automation_meta not in admin:
+            raise RuntimeError('Unable to locate automation metadata for Integrator workspace')
         admin = admin.replace(
-            "automation:{title:'Scheduling & Automation'",
-            "integrator:{title:'Интегратору',subtitle:'Технические отклонения, доказательства и план исправлений',url:'/integrator'},automation:{title:'Scheduling & Automation'",
+            automation_meta,
+            "integrator:{title:'Интегратору',subtitle:'Технические отклонения, доказательства и план исправлений',url:'/integrator'}," + automation_meta,
             1,
         )
 
@@ -56,6 +64,11 @@ def ensure_integrator_workspace(admin: str) -> str:
     safe = "if(!button||!frame){console.error('AI-BIT workspace is incomplete',key,{button,frame});return}button.classList.add('active');frame.classList.add('active');$('#title').textContent=meta[key].title;$('#subtitle').textContent=meta[key].subtitle;if(!frame.src)"
     if unsafe in admin:
         admin = admin.replace(unsafe, safe, 1)
+
+    required = (button_marker, iframe_marker, meta_marker)
+    missing = [marker for marker in required if marker not in admin]
+    if missing:
+        raise RuntimeError(f'Integrator workspace patch incomplete: {missing}')
 
     return admin
 
